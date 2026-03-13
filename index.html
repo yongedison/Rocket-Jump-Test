@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prince World</title>
+    <title>Prince World Adventure</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -12,22 +12,15 @@
             background: #5c94fc; font-family: -apple-system, sans-serif; 
             touch-action: none; width: 100vw; height: 100vh;
         }
-        
-        /* Langit & Awan */
         .cloud { position: absolute; top: 100px; font-size: 50px; opacity: 0.7; z-index: 1; }
-
-        /* Tanah */
         #ground { position: absolute; bottom: 180px; width: 100%; height: 40px; background: #885010; border-top: 4px solid #4a2a05; z-index: 5; }
         
-        /* Pangeran */
         #player { 
             position: absolute; width: 45px; height: 45px;
             font-size: 40px; display: flex; align-items: center; justify-content: center;
             z-index: 20; bottom: 220px; left: 50px;
-            transition: transform 0.1s;
         }
 
-        /* Elemen Mario: Balok & Pipa */
         .platform { 
             position: absolute; background: #ff9441; 
             border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010;
@@ -46,13 +39,9 @@
             border: 3px solid #000;
         }
 
-        /* Musuh */
         .witch { position: absolute; bottom: 220px; font-size: 40px; z-index: 5; }
-
-        /* UI */
         #score { position: absolute; top: 60px; left: 20px; font-size: 1.8rem; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); z-index: 100; }
 
-        /* Kontrol */
         #controls-container {
             position: absolute; bottom: 40px; width: 100%;
             display: flex; justify-content: space-between; padding: 0 30px; z-index: 100;
@@ -74,11 +63,9 @@
     <div id="score">Skor: 0</div>
     <div class="cloud" style="left: 10%;">☁️</div>
     <div class="cloud" style="left: 70%; top: 150px;">☁️</div>
-
     <div id="player">🤴</div>
     
     <div class="pipe" style="left: 250px;"><div class="pipe-top"></div></div>
-    
     <div class="platform" style="bottom: 350px; left: 100px; width: 120px; height: 30px;"></div>
     <div class="platform" style="bottom: 450px; left: 220px; width: 100px; height: 30px;"></div>
 
@@ -108,40 +95,19 @@
     const gravity = 0.7;
     const jumpPower = 15;
     const speed = 6;
-
-    // Logika Status Gerak
     let moveLeft = false;
     let moveRight = false;
 
-    // FUNGSI INPUT BARU (Lebih Responsif)
-    const btnLeft = document.getElementById('btn-left');
-    const btnRight = document.getElementById('btn-right');
-    const btnJump = document.getElementById('btn-jump');
+    // FUNGSI INPUT
+    const bL = document.getElementById('btn-left');
+    const bR = document.getElementById('btn-right');
+    const bJ = document.getElementById('btn-jump');
 
-    // KIRI
-    btnLeft.addEventListener('touchstart', (e) => { 
-        e.preventDefault(); 
-        moveLeft = true; 
-        player.style.transform = 'scaleX(-1)'; 
-    });
-    btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
-
-    // KANAN
-    btnRight.addEventListener('touchstart', (e) => { 
-        e.preventDefault(); 
-        moveRight = true; 
-        player.style.transform = 'scaleX(1)'; 
-    });
-    btnRight.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
-
-    // LONCAT
-    btnJump.addEventListener('touchstart', (e) => { 
-        e.preventDefault(); 
-        if(!isJumping) { 
-            velocityY = jumpPower; 
-            isJumping = true; 
-        } 
-    });
+    bL.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; player.style.transform = 'scaleX(-1)'; });
+    bL.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
+    bR.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; player.style.transform = 'scaleX(1)'; });
+    bR.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
+    bJ.addEventListener('touchstart', (e) => { e.preventDefault(); if(!isJumping) { velocityY = jumpPower; isJumping = true; } });
 
     function spawnWitch() {
         if (!gameActive) return;
@@ -157,44 +123,37 @@
             witchX -= (4 + (score / 10)); 
             witch.style.left = witchX + 'px';
 
-            let pRect = player.getBoundingClientRect();
-            let wRect = witch.getBoundingClientRect();
+            let pR = player.getBoundingClientRect();
+            let wR = witch.getBoundingClientRect();
 
-            if (pRect.right > wRect.left + 15 && pRect.left < wRect.right - 15 && pRect.bottom > wRect.top + 10) {
+            if (pR.right > wR.left + 15 && pR.left < wR.right - 15 && pR.bottom > wR.top + 10) {
                 gameActive = false;
-                alert("Kena Sihir! Skor: " + score);
+                alert("Game Over! Skor: " + score);
                 location.reload();
             }
-
-            if (witchX < -50) { 
-                clearInterval(witchInterval); 
-                witch.remove(); 
-                score++; 
-                scoreElement.innerText = `Skor: ${score}`; 
-            }
+            if (witchX < -50) { clearInterval(witchInterval); witch.remove(); score++; scoreElement.innerText = `Skor: ${score}`; }
         }, 20);
         setTimeout(spawnWitch, Math.random() * 2000 + 2000);
     }
 
-    // LOOP UTAMA (Sangat Penting buat Gerakan Lancar)
     function update() {
         if (!gameActive) return;
 
-        // Gravitasi & Loncat
         velocityY -= gravity;
         posY += velocityY;
 
-        let playerRect = player.getBoundingClientRect();
+        let pRect = player.getBoundingClientRect();
         let onPlatform = false;
 
-        // Deteksi Pijakan
         platforms.forEach(plat => {
             let platRect = plat.getBoundingClientRect();
+            // Deteksi Mendarat yang Stabil
             if (velocityY <= 0 && 
-                playerRect.bottom <= platRect.top + 10 && 
-                playerRect.bottom >= platRect.top - 10 &&
-                playerRect.right > platRect.left && 
-                playerRect.left < platRect.right) {
+                pRect.bottom >= platRect.top && 
+                pRect.bottom <= platRect.top + 20 && 
+                pRect.right > platRect.left + 5 && 
+                pRect.left < platRect.right - 5) {
+                
                 posY = window.innerHeight - platRect.top - 45; 
                 velocityY = 0;
                 isJumping = false;
@@ -208,31 +167,18 @@
             velocityY = 0;
         }
 
-        // GERAKAN MAJU MUNDUR (Sekarang diproses setiap frame)
-        if (moveLeft && posX > 0) {
-            posX -= speed;
-        }
-        if (moveRight && posX < window.innerWidth - 50) {
-            posX += speed;
-        }
+        if (moveLeft && posX > 0) posX -= speed;
+        if (moveRight && posX < window.innerWidth - 50) posX += speed;
 
-        // Update Posisi Visual
         player.style.bottom = (220 + posY) + 'px';
         player.style.left = posX + 'px';
 
         requestAnimationFrame(update);
     }
 
-    // Start Game
     update();
     spawnWitch();
-
-    // Mencegah iPhone melakukan zoom atau scroll saat main
-    document.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 1) e.preventDefault();
-    }, { passive: false });
+    document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 </script>
-
-
 </body>
 </html>
