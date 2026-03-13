@@ -1,66 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prince Adventure</title>
+    <title>Prince Run</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
-  
-        <style>
-    body { margin: 0; overflow: hidden; background: #5c94fc; font-family: sans-serif; touch-action: none; }
-    #game-box { position: relative; width: 100vw; height: 100vh; }
-    
-    /* Tanah - Dinaikkan dikit biar nggak ketutupan tombol */
-    #ground { position: absolute; bottom: 120px; width: 200%; height: 50px; background: #885010; border-top: 5px solid #4a2a05; }
-    
-    /* Pangeran - Ikut naik sama tanah */
-    #player { 
-        position: absolute; bottom: 170px; left: 50px; 
-        font-size: 50px; width: 50px; height: 50px;
-        display: flex; align-items: center; justify-content: center;
-        z-index: 10;
-    }
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #5c94fc; 
+            font-family: -apple-system, sans-serif; 
+            touch-action: none; /* Kunci layar biar nggak geser-geser */
+        }
+        #game-box { position: relative; width: 100vw; height: 100vh; }
+        
+        /* Tanah */
+        #ground { 
+            position: absolute; 
+            bottom: 120px; 
+            width: 100%; 
+            height: 40px; 
+            background: #885010; 
+            border-top: 4px solid #4a2a05; 
+        }
+        
+        /* Pangeran */
+        #player { 
+            position: absolute; 
+            bottom: 160px; 
+            left: 50px; 
+            font-size: 50px; 
+            width: 50px; 
+            height: 50px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            z-index: 10;
+        }
 
-    /* Musuh (Penyihir) - Ikut naik */
-    .witch { position: absolute; bottom: 170px; font-size: 40px; }
+        /* Penyihir */
+        .witch { position: absolute; bottom: 160px; font-size: 40px; z-index: 5; }
 
-    /* Awan */
-    .cloud { position: absolute; top: 50px; font-size: 40px; opacity: 0.6; }
+        /* Kontrol - Area Aman iPhone */
+        #controls { 
+            position: absolute; 
+            bottom: 30px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px;
+            z-index: 100;
+        }
+        .btn { 
+            background: rgba(255,255,255,0.5); 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: 2rem; 
+            border: 3px solid white;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-    /* Kontrol - Dinaikkan biar nggak nabrak bar browser */
-    #controls { 
-        position: absolute; 
-        bottom: 30px; /* Jarak aman dari paling bawah */
-        width: 100%; 
-        display: flex; 
-        justify-content: center; 
-        gap: 20px;
-        z-index: 20;
-    }
-    .btn { 
-        background: rgba(255,255,255,0.4); 
-        padding: 15px; 
-        border-radius: 50%;
-        width: 60px; 
-        height: 60px; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        font-size: 1.8rem; 
-        border: 2px solid white;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    #score { position: absolute; top: 50px; left: 20px; font-size: 1.5rem; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
- </style>
+        #score { 
+            position: absolute; 
+            top: 50px; 
+            left: 20px; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            color: white; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
+        }
+    </style>
 </head>
 <body>
 
 <div id="game-box">
     <div id="score">Skor: 0</div>
-    <div class="cloud" style="left: 10%;">☁️</div>
-    <div class="cloud" style="left: 60%; top: 80px;">☁️</div>
-    
     <div id="player">🤴</div>
     <div id="ground"></div>
 
@@ -74,69 +94,62 @@
 <script>
     const player = document.getElementById('player');
     const scoreElement = document.getElementById('score');
+    
+    // Posisi awal
     let posX = 50;
-    let posY = 170; // Sesuaikan dengan posisi bottom player di CSS
-// ... di dalam function update() ...
-if (posY <= 170) {
-    posY = 170;
-    isJumping = false;
-    velocityY = 0;
-}
-
+    let posY = 160; 
+    let velocityY = 0;
     let isJumping = false;
     let score = 0;
     let gameActive = true;
 
-    // Setting Fisika
-    const gravity = 1.2;
-    const jumpPower = 18;
-    const speed = 7;
+    // Fisika
+    const gravity = 1.0;
+    const jumpPower = 16;
+    const speed = 6;
 
-    // Gerak Kiri Kanan
     let moveLeft = false;
     let moveRight = false;
 
-    // Kontrol HP
-    document.getElementById('btn-left').ontouchstart = () => moveLeft = true;
-    document.getElementById('btn-left').ontouchend = () => moveLeft = false;
-    document.getElementById('btn-right').ontouchstart = () => moveRight = true;
-    document.getElementById('btn-right').ontouchend = () => moveRight = false;
-    document.getElementById('btn-jump').ontouchstart = () => {
+    // Fungsi Gerak (Touch Start)
+    document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
+    document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
+    document.getElementById('btn-jump').addEventListener('touchstart', (e) => { 
+        e.preventDefault();
         if (!isJumping) {
             velocityY = jumpPower;
             isJumping = true;
         }
-    };
+    });
+
+    // Fungsi Berhenti (Touch End)
+    document.getElementById('btn-left').addEventListener('touchend', () => moveLeft = false);
+    document.getElementById('btn-right').addEventListener('touchend', () => moveRight = false);
 
     function spawnWitch() {
         if (!gameActive) return;
         const witch = document.createElement('div');
         witch.className = 'witch';
         witch.innerText = '🧙‍♀️';
-        witch.style.right = '-50px';
+        witch.style.left = window.innerWidth + 'px';
         document.getElementById('game-box').appendChild(witch);
 
-        let witchPos = -50;
+        let witchX = window.innerWidth;
         let witchInterval = setInterval(() => {
             if (!gameActive) { clearInterval(witchInterval); return; }
             
-            witchPos += 5 + (score/5); // Makin lama makin cepet
-            witch.style.right = witchPos + 'px';
+            witchX -= (4 + (score / 5)); 
+            witch.style.left = witchX + 'px';
 
-            // Cek Tabrakan (Hitbox)
-            let playerRect = player.getBoundingClientRect();
-            let witchRect = witch.getBoundingClientRect();
+            // Cek Tabrakan
+            let pRect = player.getBoundingClientRect();
+            let wRect = witch.getBoundingClientRect();
 
-            if (
-                playerRect.right > witchRect.left &&
-                playerRect.left < witchRect.right &&
-                playerRect.bottom > witchRect.top
-            ) {
+            if (pRect.right > wRect.left + 10 && pRect.left < wRect.right - 10 && pRect.bottom > wRect.top + 10) {
                 gameOver();
             }
 
-            // Lolos musuh
-            if (witchPos > window.innerWidth + 50) {
+            if (witchX < -50) {
                 clearInterval(witchInterval);
                 witch.remove();
                 score++;
@@ -150,21 +163,21 @@ if (posY <= 170) {
     function update() {
         if (!gameActive) return;
 
-        // Gravitasi
+        // Loncat & Gravitasi
         velocityY -= gravity;
-        posY += velocityY;
+        posY -= velocityY; // Di CSS 'bottom' bertambah artinya naik
 
-        if (posY <= 50) {
-            posY = 50;
+        if (posY >= 160) {
+            posY = 160;
             isJumping = false;
             velocityY = 0;
         }
 
-        // Gerakan Kiri/Kanan
+        // Geser Kiri Kanan
         if (moveLeft && posX > 0) posX -= speed;
         if (moveRight && posX < window.innerWidth - 50) posX += speed;
 
-        player.style.bottom = posY + 'px';
+        player.style.top = posY + 'px'; // Kita pakai 'top' biar lebih stabil di update
         player.style.left = posX + 'px';
 
         requestAnimationFrame(update);
@@ -172,7 +185,7 @@ if (posY <= 170) {
 
     function gameOver() {
         gameActive = false;
-        alert("Pangeran Tertangkap Penyihir! Skor kamu: " + score);
+        alert("Game Over! Skor kamu: " + score);
         location.reload();
     }
 
