@@ -53,81 +53,85 @@
 </div>
 
 <script>
-    const yEl = document.getElementById('yong');
+        const yEl = document.getElementById('yong');
     const aEl = document.getElementById('asti');
     const sEl = document.getElementById('sword-fx');
     const world = document.getElementById('game-world');
 
-    let p = { x: 50, y: 0, vy: 0, hp: 100, jumping: false, dir: 1 };
-    let e = { x: 250, y: 0, hp: 100, state: 'idle', timer: 0 };
+    let p = { x: 50, y: 0, vy: 0, hp: 100, jump: false, dir: 1 };
+    let e = { x: 250, hp: 100 };
     let balls = [];
     let moveDir = 0;
+    let frameCount = 0;
 
     function spawnMagic() {
         const ball = document.createElement('div');
         ball.className = 'magic-ball';
         const bx = e.x;
-        const by = 40;
+        // Tentukan arah tembakan berdasarkan posisi Yong
         const bDir = (p.x > e.x) ? 1 : -1;
         world.appendChild(ball);
-        balls.push({ el: ball, x: bx, y: by, dx: bDir * 5 });
+        balls.push({ el: ball, x: bx, y: 40, dx: bDir * 6 });
     }
 
     function gameLoop() {
-        // Yong Logic
+        frameCount++;
+
+        // --- GERAK YONG ---
         p.x += moveDir;
         if(p.x < 0) p.x = 0;
         if(p.x > world.clientWidth - 45) p.x = world.clientWidth - 45;
         
-        if(p.jumping) {
+        if(p.jump) {
             p.vy -= 0.8;
             p.y += p.vy;
-            if(p.y <= 0) { p.y = 0; p.vy = 0; p.jumping = false; }
+            if(p.y <= 0) { p.y = 0; p.vy = 0; p.jump = false; }
         }
 
-        // Asti Logic (Lebih teratur)
-        e.timer++;
-        let dist = p.x - e.x;
+        // --- GERAK ASTI (AI AGRESIF) ---
+        let jarak = p.x - e.x;
         
-        if(e.timer % 120 === 0) { // Setiap 2 detik, Asti bereaksi
-            if(Math.abs(dist) < 100) {
-                e.state = 'escape'; // Kabur kalau terlalu dekat
-            } else {
-                e.state = 'attack'; // Tembak kalau jauh
-                spawnMagic();
-            }
+        // Logika: Asti akan selalu menjaga jarak aman (150px)
+        if (Math.abs(jarak) < 130) {
+            e.x += (jarak > 0 ? -3 : 3); // Mundur kalau Yong mendekat
+        } else if (Math.abs(jarak) > 200) {
+            e.x += (jarak > 0 ? 2 : -2); // Kejar kalau Yong menjauh
         }
 
-        if(e.state === 'escape') {
-            e.x += (dist > 0 ? -2 : 2);
-            if(e.timer % 60 === 0) e.state = 'idle';
-        }
-        
+        // Batasi gerak Asti agar tidak keluar layar
         if(e.x < 10) e.x = 10;
         if(e.x > world.clientWidth - 45) e.x = world.clientWidth - 45;
 
-        // Magic Balls Logic
-        balls.forEach((b, i) => {
+        // Asti nembak otomatis tiap 1.5 detik
+        if (frameCount % 90 === 0) {
+            spawnMagic();
+        }
+
+        // --- LOGIKA PELURU SIHIR ---
+        for (let i = balls.length - 1; i >= 0; i--) {
+            let b = balls[i];
             b.x += b.dx;
-            b.el.style.transform = `translate(${b.x}px, ${-b.y}px)`;
+            b.el.style.transform = `translate(${b.x}px, -40px)`;
             
-            // Hit Yong
-            if(Math.abs(b.x - p.x) < 30 && Math.abs(b.y - p.y) < 40) {
+            // Cek kena Yong
+            if (Math.abs(b.x - p.x) < 30 && p.y < 50) {
                 p.hp -= 5;
                 document.getElementById('yhp').style.width = p.hp + "%";
                 b.el.remove();
                 balls.splice(i, 1);
-            }
-            if(b.x < -20 || b.x > world.clientWidth + 20) {
+            } 
+            // Hapus kalau lewat layar
+            else if (b.x < -50 || b.x > world.clientWidth + 50) {
                 b.el.remove();
                 balls.splice(i, 1);
             }
-        });
+        }
 
-        // Sync visual
+        // --- UPDATE POSISI GAMBAR ---
         yEl.style.transform = `translate(${p.x}px, ${-p.y}px)`;
         aEl.style.transform = `translate(${e.x}px, 0px)`;
 
+        // Kondisi Menang/Kalah
         if(p.hp <= 0 || e.hp <= 0) {
             alert(p.hp <= 0 ? "YONG KALAH!" : "YONG MENANG!");
             location.reload();
@@ -137,34 +141,35 @@
         requestAnimationFrame(gameLoop);
     }
 
-    // Input
-    const bind = (id, on, off) => {
+    // --- KONTROL TOMBOL HP ---
+    const bind = (id, start, end) => {
         const el = document.getElementById(id);
-        el.addEventListener('touchstart', (ev) => { ev.preventDefault(); on(); });
-        el.addEventListener('touchend', (ev) => { ev.preventDefault(); off(); });
+        el.ontouchstart = (ev) => { ev.preventDefault(); start(); };
+        el.ontouchend = (ev) => { ev.preventDefault(); end(); };
     };
 
-    bind('lBtn', () => { moveDir = -4; p.dir = -1; }, () => moveDir = 0);
-    bind('rBtn', () => { moveDir = 4; p.dir = 1; }, () => moveDir = 0);
-    bind('jBtn', () => { if(!p.jumping){ p.vy = 14; p.jumping = true; }}, () => {});
+    bind('lBtn', () => { moveDir = -5; p.dir = -1; }, () => moveDir = 0);
+    bind('rBtn', () => { moveDir = 5; p.dir = 1; }, () => moveDir = 0);
+    bind('jBtn', () => { if(!p.jump){ p.vy = 15; p.jump = true; }}, () => {});
     
     bind('aBtn', () => {
-        // Animasi Tebasan
-        let sx = p.x + (p.dir === 1 ? 40 : -40);
+        // Visual tebasan
+        let sx = p.x + (p.dir === 1 ? 45 : -45);
         sEl.style.left = sx + "px";
         sEl.style.bottom = (p.y + 20) + "px";
         sEl.style.opacity = "1";
-        setTimeout(() => sEl.style.opacity = "0", 150);
+        setTimeout(() => sEl.style.opacity = "0", 100);
 
-        // Hit Asti
-        if(Math.abs(sx - e.x) < 60 && Math.abs(p.y - 0) < 50) {
+        // Cek tebasan kena Asti
+        if(Math.abs(sx - e.x) < 60 && p.y < 60) {
             e.hp -= 10;
             document.getElementById('ahp').style.width = e.hp + "%";
-            aEl.style.filter = "brightness(3)";
-            setTimeout(() => aEl.style.filter = "none", 100);
+            aEl.style.background = "white"; // Efek flash putih pas kena
+            setTimeout(() => aEl.style.background = "var(--asti)", 100);
         }
     }, () => {});
 
+    // Jalankan game
     gameLoop();
 </script>
 </body>
