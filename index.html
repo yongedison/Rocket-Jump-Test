@@ -3,154 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yong vs Asti - Ground Fix</title>
+    <title>Yong vs Asti - No Canvas Edition</title>
     <style>
         :root { --yong: #00f2ff; --asti: #bf00ff; }
-        body { 
-            margin: 0; background: #000; overflow: hidden; 
-            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-            height: 100vh; font-family: sans-serif; touch-action: none;
-        }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Container utama supaya game tidak lari ke mana-mana */
-        #game-container {
-            position: relative; width: 100vw; height: 70vh; /* Area game 70% layar atas */
-            background: #050505; border-bottom: 2px solid var(--yong);
-            overflow: hidden;
-        }
+        #game-world { position: relative; flex: 1; background: #050505; border-bottom: 2px solid #333; overflow: hidden; }
+        #floor { position: absolute; bottom: 0; width: 100%; height: 5px; background: #222; }
 
-        canvas { display: block; width: 100%; height: 100%; }
+        /* Karakter pakai DIV biasa, pasti muncul! */
+        .char { position: absolute; width: 40px; height: 60px; transition: transform 0.05s linear; }
+        #yong { background: var(--yong); box-shadow: 0 0 15px var(--yong); bottom: 5px; left: 50px; z-index: 5; }
+        #asti { background: var(--asti); box-shadow: 0 0 15px var(--asti); bottom: 5px; right: 50px; z-index: 4; }
+        
+        /* Efek Tebasan */
+        #slash { position: absolute; width: 50px; height: 50px; background: white; opacity: 0; pointer-events: none; border-radius: 50%; z-index: 6; }
 
-        #ui-top {
-            position: absolute; top: 10px; width: 100%; display: flex;
-            justify-content: space-around; pointer-events: none;
-        }
-        .hp-bar { width: 100px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 5px; }
-        .hp-fill { height: 100%; width: 100%; transition: 0.2s; }
+        .hp-area { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; }
+        .bar { width: 120px; height: 10px; background: #222; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .fill { height: 100%; width: 100%; transition: width 0.2s; }
 
-        /* Area tombol di 30% layar bawah */
-        #controls { 
-            width: 100vw; height: 30vh; background: #111;
-            display: flex; justify-content: space-evenly; align-items: center;
-        }
-        .btn { 
-            width: 65px; height: 65px; background: #222; border: 1px solid #444; 
-            border-radius: 12px; display: flex; align-items: center; justify-content: center; 
-            color: white; font-weight: bold; -webkit-user-select: none;
-        }
-        .attack-btn { border-color: var(--yong); color: var(--yong); width: 80px; height: 80px; }
+        #controls { height: 200px; background: #111; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr 1fr; gap: 10px; padding: 15px; }
+        .btn { background: #222; border: 1px solid #444; border-radius: 15px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
+        .atk { background: rgba(0, 242, 255, 0.2); border-color: var(--yong); color: var(--yong); grid-column: span 3; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div id="ui-top">
-        <div><div style="color:white; font-size:10px">YONG</div><div class="hp-bar"><div id="yhp" class="hp-fill" style="background: var(--yong)"></div></div></div>
-        <div><div style="color:white; font-size:10px">ASTI</div><div class="hp-bar"><div id="ahp" class="hp-fill" style="background: var(--asti)"></div></div></div>
+<div id="game-world">
+    <div class="hp-area">
+        <div><div style="color:white; font-size:10px">YONG</div><div class="bar"><div id="yhp" class="fill" style="background: var(--yong)"></div></div></div>
+        <div><div style="color:white; font-size:10px">ASTI</div><div class="bar"><div id="ahp" class="fill" style="background: var(--asti)"></div></div></div>
     </div>
-    <canvas id="gameCanvas"></canvas>
+    <div id="yong" class="char"></div>
+    <div id="asti" class="char"></div>
+    <div id="slash"></div>
+    <div id="floor"></div>
 </div>
 
 <div id="controls">
-    <div class="btn" id="lBtn">L</div>
-    <div class="btn" id="rBtn">R</div>
+    <div class="btn" id="lBtn">LEFT</div>
     <div class="btn" id="jBtn">JUMP</div>
-    <div class="btn attack-btn" id="aBtn">SLASH</div>
+    <div class="btn" id="rBtn">RIGHT</div>
+    <div class="btn atk" id="aBtn">SLASH ATTACK</div>
 </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('game-container');
+    const yEl = document.getElementById('yong');
+    const aEl = document.getElementById('asti');
+    const sEl = document.getElementById('slash');
+    const world = document.getElementById('game-world');
 
-    // Set ukuran internal canvas (biar resolusi tajem)
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    let p = { x: 50, y: 0, v: 0, jump: false, hp: 100, side: 1 };
+    let e = { x: 250, y: 0, hp: 100, lastS: 0 };
+    let move = 0;
 
-    const floorY = canvas.height - 20; // Lantai mepet bawah container game
-    
-    const yong = { x: 50, y: floorY-60, w: 35, h: 55, dx: 0, dy: 0, hp: 100, isJumping: false, isAtk: false, atkF: 0, side: 1 };
-    const asti = { x: canvas.width - 80, y: floorY-60, w: 40, h: 60, hp: 100, dx: 0, lastS: 0, tele: false, side: -1 };
-    const projectiles = [];
+    function gameLoop() {
+        // Yong Move
+        p.x += move;
+        if(p.x < 0) p.x = 0;
+        if(p.x > world.clientWidth - 40) p.x = world.clientWidth - 40;
 
-    function update() {
-        ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Garis lantai
-        ctx.strokeStyle = "#333"; ctx.beginPath(); ctx.moveTo(0, floorY); ctx.lineTo(canvas.width, floorY); ctx.stroke();
-
-        // Physics Yong
-        yong.dy += 0.8; yong.y += yong.dy; yong.x += yong.dx;
-        if (yong.y + yong.h > floorY) { yong.y = floorY - yong.h; yong.dy = 0; yong.isJumping = false; }
-        if (yong.x < 0) yong.x = 0; if (yong.x > canvas.width - yong.w) yong.x = canvas.width - yong.w;
-        if (yong.dx !== 0) yong.side = yong.dx > 0 ? 1 : -1;
-
-        // Asti AI (Jalan di tanah)
-        if(!asti.tele) {
-            let dist = yong.x - asti.x;
-            asti.side = dist > 0 ? 1 : -1;
-            if(Math.abs(dist) > 150) asti.x += (dist > 0 ? 1.5 : -1.5);
-            else if(Math.abs(dist) < 80) asti.x += (dist > 0 ? -2 : 2);
-
-            if(Date.now() - asti.lastS > 2000) {
-                projectiles.push({x: asti.x + (asti.side*20), y: asti.y + 20, dx: asti.side * 5});
-                asti.lastS = Date.now();
-            }
+        // Yong Jump
+        if(p.jump) {
+            p.v -= 0.8;
+            p.y += p.v;
+            if(p.y <= 0) { p.y = 0; p.v = 0; p.jump = false; }
         }
 
-        // Draw Yong
-        ctx.fillStyle = var(--yong); ctx.fillRect(yong.x, yong.y, yong.w, yong.h);
-        
-        // Draw Slash
-        if(yong.isAtk) {
-            ctx.fillStyle = "white";
-            let sx = yong.side === 1 ? yong.x + yong.w : yong.x - 40;
-            ctx.fillRect(sx, yong.y + 10, 40, 30);
-            yong.atkF++;
-            if(sx + 40 > asti.x && sx < asti.x + asti.w && yong.y < asti.y + asti.h) {
-                if(yong.atkF === 1) {
-                    asti.hp -= 10;
-                    asti.tele = true;
-                    setTimeout(() => { 
-                        asti.x = Math.random() * (canvas.width - 50); 
-                        asti.tele = false; 
-                    }, 300);
-                }
-            }
-            if(yong.atkF > 6) { yong.isAtk = false; yong.atkF = 0; }
-        }
+        // Asti AI Simple
+        let dist = p.x - e.x;
+        if(Math.abs(dist) > 150) e.x += (dist > 0 ? 1 : -1);
+        else if(Math.abs(dist) < 80) e.x += (dist > 0 ? -2 : 2);
 
-        // Draw Asti
-        if(!asti.tele) { ctx.fillStyle = var(--asti); ctx.fillRect(asti.x, asti.y, asti.w, asti.h); }
+        // Render
+        yEl.style.transform = `translate(${p.x}px, ${-p.y}px)`;
+        aEl.style.transform = `translateX(${e.x}px)`;
 
-        // Projectiles
-        projectiles.forEach((p, i) => {
-            p.x += p.dx;
-            ctx.fillStyle = "magenta"; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill();
-            if(p.x > yong.x && p.x < yong.x + yong.w && p.y > yong.y && p.y < yong.y + yong.h) {
-                yong.hp -= 10; projectiles.splice(i, 1);
-            }
-            if(p.x < -10 || p.x > canvas.width + 10) projectiles.splice(i, 1);
-        });
-
-        document.getElementById('yhp').style.width = yong.hp + "%";
-        document.getElementById('ahp').style.width = asti.hp + "%";
-
-        if(yong.hp <= 0 || asti.hp <= 0) { alert(yong.hp <= 0 ? "GAME OVER" : "VICTORY"); location.reload(); return; }
-        requestAnimationFrame(update);
+        requestAnimationFrame(gameLoop);
     }
 
-    const b = (id, f) => {
+    // Controls
+    const btn = (id, start, end) => {
         const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); f(true); }, {passive: false});
-        el.addEventListener('touchend', (e) => { e.preventDefault(); f(false); }, {passive: false});
-    }
-    b('lBtn', (v) => yong.dx = v ? -4 : 0);
-    b('rBtn', (v) => yong.dx = v ? 4 : 0);
-    b('jBtn', (v) => { if(v && !yong.isJumping) { yong.dy = -14; yong.isJumping = true; }});
-    b('aBtn', (v) => { if(v) yong.isAtk = true; });
+        el.ontouchstart = (ev) => { ev.preventDefault(); start(); };
+        el.ontouchend = (ev) => { ev.preventDefault(); end(); };
+    };
 
-    update();
+    btn('lBtn', () => { move = -5; p.side = -1; }, () => move = 0);
+    btn('rBtn', () => { move = 5; p.side = 1; }, () => move = 0);
+    btn('jBtn', () => { if(!p.jump){ p.v = 15; p.jump = true; }}, () => {});
+    
+    btn('aBtn', () => {
+        // Visual Attack
+        sEl.style.opacity = "0.8";
+        let sx = p.x + (p.side === 1 ? 40 : -40);
+        sEl.style.transform = `translate(${sx}px, ${-p.y}px)`;
+        
+        // Hit logic
+        if(Math.abs(sx - e.x) < 50 && Math.abs(p.y - 0) < 60) {
+            e.hp -= 10;
+            document.getElementById('ahp').style.width = e.hp + "%";
+            aEl.style.background = "white";
+            setTimeout(() => { aEl.style.background = "var(--asti)"; e.x += (p.side * 50); }, 100);
+        }
+        
+        setTimeout(() => sEl.style.opacity = "0", 100);
+    }, () => {});
+
+    gameLoop();
 </script>
 </body>
 </html>
