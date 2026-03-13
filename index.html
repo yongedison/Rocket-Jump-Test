@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prince World Adventure</title>
+    <title>Yong's Adventure</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -12,173 +12,141 @@
             background: #5c94fc; font-family: -apple-system, sans-serif; 
             touch-action: none; width: 100vw; height: 100vh;
         }
-        .cloud { position: absolute; top: 100px; font-size: 50px; opacity: 0.7; z-index: 1; }
-        #ground { position: absolute; bottom: 180px; width: 100%; height: 40px; background: #885010; border-top: 4px solid #4a2a05; z-index: 5; }
         
-        #player { 
-            position: absolute; width: 45px; height: 45px;
-            font-size: 40px; display: flex; align-items: center; justify-content: center;
-            z-index: 20; bottom: 220px; left: 50px;
-        }
+        /* Dunia yang bisa digeser (Viewport) */
+        #game-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        #world { position: absolute; top: 0; left: 0; height: 100%; width: 5000px; transition: transform 0.1s linear; }
 
-        .platform { 
-            position: absolute; background: #ff9441; 
-            border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010;
-            z-index: 10;
-        }
+        #ground { position: absolute; bottom: 0; width: 5000px; height: 180px; background: #885010; border-top: 5px solid #4a2a05; }
         
-        .pipe { 
-            position: absolute; background: #2ecc71; 
-            width: 60px; height: 80px; bottom: 220px;
-            border: 3px solid #000; border-radius: 5px 5px 0 0;
-            z-index: 4;
-        }
-        .pipe-top {
-            position: absolute; background: #2ecc71;
-            width: 70px; height: 20px; left: -8px; top: -5px;
-            border: 3px solid #000;
-        }
+        /* Karakter & Objek */
+        #player { position: absolute; width: 45px; height: 45px; font-size: 40px; z-index: 100; bottom: 180px; left: 100px; }
+        .platform { position: absolute; background: #ff9441; border: 3px solid #000; z-index: 10; }
+        .pipe { position: absolute; background: #2ecc71; width: 60px; height: 80px; bottom: 180px; border: 3px solid #000; z-index: 10; }
+        .enemy { position: absolute; bottom: 180px; font-size: 35px; width: 40px; height: 40px; z-index: 10; }
+        .finish-line { position: absolute; bottom: 180px; font-size: 60px; z-index: 5; }
 
-        .witch { position: absolute; bottom: 220px; font-size: 40px; z-index: 5; }
-        #score { position: absolute; top: 60px; left: 20px; font-size: 1.8rem; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); z-index: 100; }
+        /* UI */
+        #ui { position: fixed; top: 50px; left: 20px; color: white; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px #000; z-index: 200; }
 
-        #controls-container {
-            position: absolute; bottom: 40px; width: 100%;
-            display: flex; justify-content: space-between; padding: 0 30px; z-index: 100;
-        }
-        .move-group { display: flex; gap: 15px; }
-        .btn { 
-            background: rgba(255,255,255,0.4); backdrop-filter: blur(5px);
-            width: 75px; height: 75px; border-radius: 20px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; border: 3px solid white; box-shadow: 0 6px 0 rgba(0,0,0,0.2);
-        }
-        .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,0.2); background: white; }
-        #btn-jump { background: rgba(0, 212, 255, 0.5); border-color: #00d4ff; width: 85px; height: 85px; }
+        /* Kontrol */
+        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; z-index: 200; }
+        .btn { background: rgba(255,255,255,0.4); width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; border: 3px solid white; }
+        #btn-jump { background: rgba(0, 212, 255, 0.5); width: 90px; height: 90px; }
     </style>
 </head>
 <body>
 
-<div id="game-box">
-    <div id="score">Skor: 0</div>
-    <div class="cloud" style="left: 10%;">☁️</div>
-    <div class="cloud" style="left: 70%; top: 150px;">☁️</div>
-    <div id="player">🤴</div>
+<div id="game-viewport">
+    <div id="ui">Score: <span id="score">0</span> | Stage 1-1</div>
     
-    <div class="pipe" style="left: 250px;"><div class="pipe-top"></div></div>
-    <div class="platform" style="bottom: 350px; left: 100px; width: 120px; height: 30px;"></div>
-    <div class="platform" style="bottom: 450px; left: 220px; width: 100px; height: 30px;"></div>
-
-    <div id="ground"></div>
-
-    <div id="controls-container">
-        <div class="move-group">
-            <div class="btn" id="btn-left">⬅️</div>
-            <div class="btn" id="btn-right">➡️</div>
-        </div>
-        <div class="btn" id="btn-jump">🚀</div>
+    <div id="world">
+        <div id="ground"></div>
+        <div id="player">🤴</div>
+        
+        <div class="platform" style="bottom: 320px; left: 400px; width: 150px; height: 35px;"></div>
+        <div class="pipe" style="left: 700px;"></div>
+        <div class="platform" style="bottom: 400px; left: 900px; width: 100px; height: 35px;"></div>
+        <div class="enemy" id="enemy1" style="left: 600px;">👾</div>
+        <div class="enemy" id="enemy2" style="left: 1200px;">👾</div>
+        
+        <div class="finish-line" style="left: 2000px;">🚩</div>
     </div>
 </div>
 
+<div id="controls">
+    <div style="display: flex; gap: 15px;">
+        <div class="btn" id="btn-left">⬅️</div>
+        <div class="btn" id="btn-right">➡️</div>
+    </div>
+    <div class="btn" id="btn-jump">🚀</div>
+</div>
+
 <script>
+    const world = document.getElementById('world');
     const player = document.getElementById('player');
-    const scoreElement = document.getElementById('score');
-    const platforms = document.querySelectorAll('.platform, .pipe');
+    const scoreText = document.getElementById('score');
     
-    let posX = 50;
-    let posY = 0; 
-    let velocityY = 0;
-    let isJumping = false;
-    let score = 0;
-    let gameActive = true;
+    let pX = 100, pY = 0, vY = 0, isJump = false;
+    let score = 0, camX = 0, gameActive = true;
+    let moveL = false, moveR = false;
 
-    const gravity = 0.7;
-    const jumpPower = 15;
-    const speed = 6;
-    let moveLeft = false;
-    let moveRight = false;
+    const gravity = 0.8, jumpPower = 16, speed = 6;
 
-    // FUNGSI INPUT
-    const bL = document.getElementById('btn-left');
-    const bR = document.getElementById('btn-right');
-    const bJ = document.getElementById('btn-jump');
+    // Input Handlers
+    const setup = (id, s, e) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (ev) => { ev.preventDefault(); s(); });
+        el.addEventListener('touchend', (ev) => { ev.preventDefault(); e(); });
+    };
 
-    bL.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; player.style.transform = 'scaleX(-1)'; });
-    bL.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
-    bR.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; player.style.transform = 'scaleX(1)'; });
-    bR.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
-    bJ.addEventListener('touchstart', (e) => { e.preventDefault(); if(!isJumping) { velocityY = jumpPower; isJumping = true; } });
+    setup('btn-left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
+    setup('btn-right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
+    setup('btn-jump', () => { if(!isJump) { vY = jumpPower; isJump = true; } }, () => {});
 
-    function spawnWitch() {
-        if (!gameActive) return;
-        const witch = document.createElement('div');
-        witch.className = 'witch';
-        witch.innerText = '🧙‍♀️';
-        witch.style.left = window.innerWidth + 'px';
-        document.getElementById('game-box').appendChild(witch);
-
-        let witchX = window.innerWidth;
-        let witchInterval = setInterval(() => {
-            if (!gameActive) { clearInterval(witchInterval); witch.remove(); return; }
-            witchX -= (4 + (score / 10)); 
-            witch.style.left = witchX + 'px';
-
-            let pR = player.getBoundingClientRect();
-            let wR = witch.getBoundingClientRect();
-
-            if (pR.right > wR.left + 15 && pR.left < wR.right - 15 && pR.bottom > wR.top + 10) {
-                gameActive = false;
-                alert("Game Over! Skor: " + score);
-                location.reload();
-            }
-            if (witchX < -50) { clearInterval(witchInterval); witch.remove(); score++; scoreElement.innerText = `Skor: ${score}`; }
-        }, 20);
-        setTimeout(spawnWitch, Math.random() * 2000 + 2000);
-    }
+    // Enemy Logic
+    let enemies = [
+        { id: 'enemy1', x: 600, dir: -1, active: true },
+        { id: 'enemy2', x: 1200, dir: -1, active: true }
+    ];
 
     function update() {
-        if (!gameActive) return;
+        if(!gameActive) return;
 
-        velocityY -= gravity;
-        posY += velocityY;
+        // Physics
+        vY -= gravity;
+        pY += vY;
 
-        let pRect = player.getBoundingClientRect();
-        let onPlatform = false;
+        if(pY <= 0) { pY = 0; vY = 0; isJump = false; }
 
-        platforms.forEach(plat => {
-            let platRect = plat.getBoundingClientRect();
-            // Deteksi Mendarat yang Stabil
-            if (velocityY <= 0 && 
-                pRect.bottom >= platRect.top && 
-                pRect.bottom <= platRect.top + 20 && 
-                pRect.right > platRect.left + 5 && 
-                pRect.left < platRect.right - 5) {
-                
-                posY = window.innerHeight - platRect.top - 45; 
-                velocityY = 0;
-                isJumping = false;
-                onPlatform = true;
+        if(moveL && pX > 0) pX -= speed;
+        if(moveR) pX += speed;
+
+        // Camera Follow (Pusatkan pangeran di layar)
+        camX = Math.max(0, pX - 150);
+        world.style.transform = `translateX(-${camX}px)`;
+
+        // Update Visual
+        player.style.left = pX + 'px';
+        player.style.bottom = (180 + pY) + 'px';
+
+        // Check Collision with Enemies
+        enemies.forEach(en => {
+            if(!en.active) return;
+            const el = document.getElementById(en.id);
+            en.x += (en.dir * 2);
+            el.style.left = en.x + 'px';
+
+            // Tabrakan
+            let pR = player.getBoundingClientRect();
+            let eR = el.getBoundingClientRect();
+
+            if (pR.right > eR.left + 10 && pR.left < eR.right - 10 && pR.bottom > eR.top) {
+                if (vY < 0) { // Injak kepala
+                    en.active = false;
+                    el.style.display = 'none';
+                    vY = 10; // Mental dikit
+                    score += 100;
+                    scoreText.innerText = score;
+                } else { // Nabrak samping
+                    gameActive = false;
+                    alert("Game Over! Kena musuh.");
+                    location.reload();
+                }
             }
         });
 
-        if (!onPlatform && posY <= 0) {
-            posY = 0;
-            isJumping = false;
-            velocityY = 0;
+        // Check Finish
+        if(pX > 2000) {
+            gameActive = false;
+            alert("STAGE CLEAR! Kamu hebat!");
+            location.reload();
         }
-
-        if (moveLeft && posX > 0) posX -= speed;
-        if (moveRight && posX < window.innerWidth - 50) posX += speed;
-
-        player.style.bottom = (220 + posY) + 'px';
-        player.style.left = posX + 'px';
 
         requestAnimationFrame(update);
     }
 
     update();
-    spawnWitch();
-    document.addEventListener('touchmove', (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 </script>
 </body>
 </html>
