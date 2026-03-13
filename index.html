@@ -3,206 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Yong World</title>
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Super Yong World - Sound</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; overflow: hidden; background: #5c94fc; font-family: 'Arial', sans-serif; touch-action: none; }
+        body { margin: 0; overflow: hidden; background: #5c94fc; font-family: sans-serif; touch-action: none; }
         
-        /* Menu */
-        #menu { position: fixed; inset: 0; background: #5c94fc; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; font-weight: bold; box-shadow: 0 5px 0 #885010; }
+        #menu { position: fixed; inset: 0; background: #5c94fc; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; }
+        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; font-weight: bold; margin-top: 20px; }
 
-        /* Game Area */
-        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: none; }
-        #world { position: absolute; top: 0; left: 0; height: 100%; width: 10000px; }
-        #ground { position: absolute; bottom: 0; width: 10000px; height: 100px; background: #885010; border-top: 6px solid #4a2a05; }
+        #world { position: absolute; width: 8000px; height: 100vh; }
+        #ground { position: absolute; bottom: 0; width: 100%; height: 100px; background: #885010; border-top: 5px solid #4a2a05; }
+        #player { position: absolute; width: 40px; height: 40px; font-size: 35px; z-index: 100; display: flex; align-items: center; justify-content: center; }
         
-        /* Objek */
-        #player { position: absolute; width: 40px; height: 40px; font-size: 35px; z-index: 100; bottom: 100px; left: 100px; display: flex; align-items: center; justify-content: center; }
-        .block { position: absolute; background: #ff9441; border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010; z-index: 10; }
-        .pipe { position: absolute; background: #2ecc71; width: 70px; border: 3px solid #000; z-index: 9; border-radius: 5px 5px 0 0; bottom: 100px; }
-        .pipe::after { content: ''; position: absolute; top: 0; left: -5px; width: 74px; height: 20px; background: #2ecc71; border: 3px solid #000; border-radius: 3px; }
-        .coin { position: absolute; font-size: 25px; z-index: 8; text-align: center; }
-        .enemy { position: absolute; bottom: 100px; font-size: 30px; width: 40px; height: 40px; z-index: 10; display: flex; align-items: center; justify-content: center; }
-        .flag { position: absolute; bottom: 100px; font-size: 60px; z-index: 5; }
+        .block { position: absolute; background: #ff9441; border: 3px solid #000; z-index: 10; box-shadow: inset -4px -4px 0 #885010; }
+        .pipe { position: absolute; background: #2ecc71; width: 60px; border: 3px solid #000; border-radius: 5px 5px 0 0; bottom: 100px; z-index: 10; }
+        .coin { position: absolute; font-size: 25px; z-index: 8; }
+        .enemy { position: absolute; bottom: 100px; font-size: 30px; width: 40px; height: 40px; z-index: 10; }
+        .finish { position: absolute; bottom: 100px; font-size: 60px; z-index: 5; }
 
-        /* UI */
-        #ui { position: fixed; top: 40px; left: 20px; color: white; font-size: 1.2rem; font-weight: bold; z-index: 500; text-shadow: 2px 2px #000; }
-        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; z-index: 500; }
-        .btn { background: rgba(255,255,255,0.4); width: 70px; height: 70px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 3px solid white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-        #btn-jump { background: rgba(0,212,255,0.5); width: 85px; height: 85px; border-radius: 50%; }
+        #ui { position: fixed; top: 40px; left: 20px; color: white; font-weight: bold; font-size: 1.2rem; text-shadow: 2px 2px #000; z-index: 500; }
+        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 500; }
+        .btn { background: rgba(255,255,255,0.4); width: 75px; height: 75px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 2px solid white; }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1 style="font-size: 2.5rem; text-align: center; margin-bottom: 10px;">SUPER YONG<br>WORLD</h1>
-    <p>Record: <span id="hi-score">0</span></p>
-    <button class="btn-start" onclick="startGame()">MASUK LEVEL 1-1</button>
+    <h1>SUPER YONG WORLD</h1>
+    <p>High Score: <span id="hi-score">0</span></p>
+    <button class="btn-start" onclick="startGame()">MULAI PETUALANGAN</button>
 </div>
 
-<div id="viewport">
-    <div id="ui">🪙 <span id="coins">0</span> | Score: <span id="score">0</span></div>
-    <div id="world">
-        <div id="ground"></div>
-        <div id="player">🤴</div>
-        
-        <div class="pipe" style="left: 450px; height: 60px;"></div>
-        <div class="block" style="bottom: 250px; left: 600px; width: 40px; height: 40px;"></div>
-        <div class="coin" style="bottom: 300px; left: 605px;">💰</div>
-        <div class="block" style="bottom: 250px; left: 640px; width: 40px; height: 40px;"></div>
-        
-        <div class="enemy" data-id="1" style="left: 900px;">👾</div>
-        <div class="pipe" style="left: 1100px; height: 100px;"></div>
-        
-        <div class="block" style="bottom: 220px; left: 1400px; width: 200px; height: 30px;"></div>
-        <div class="coin" style="bottom: 260px; left: 1450px;">💰</div>
-        <div class="coin" style="bottom: 260px; left: 1520px;">💰</div>
-        
-        <div class="enemy" data-id="2" style="left: 1800px;">👾</div>
-        <div class="enemy" data-id="3" style="left: 2100px;">👾</div>
-        
-        <div class="block" style="bottom: 250px; left: 2400px; width: 80px; height: 40px;"></div>
-        <div class="block" style="bottom: 350px; left: 2550px; width: 80px; height: 40px;"></div>
-        <div class="block" style="bottom: 450px; left: 2700px; width: 80px; height: 40px;"></div>
-        <div class="coin" style="bottom: 500px; left: 2725px;">💰</div>
+<div id="ui" style="display:none;">🪙 <span id="coins">0</span> | Score: <span id="score">0</span></div>
 
-        <div class="flag" style="left: 4000px;">🚩</div>
-    </div>
+<div id="world" style="display:none;">
+    <div id="ground"></div>
+    <div id="player">🤴</div>
+    
+    <div class="pipe" style="left: 400px; height: 60px;"></div>
+    <div class="coin" style="bottom: 250px; left: 415px;">💰</div>
+    
+    <div class="block" style="left: 600px; bottom: 250px; width: 40px; height: 40px;"></div>
+    <div class="coin" style="bottom: 300px; left: 605px;">💰</div>
+    
+    <div class="enemy" style="left: 900px;">👾</div>
+    <div class="pipe" style="left: 1200px; height: 100px;"></div>
+    
+    <div class="block" style="left: 1500px; bottom: 220px; width: 200px; height: 35px;"></div>
+    <div class="enemy" style="left: 1700px;">👾</div>
+    
+    <div class="finish" style="left: 5000px;">🚩</div>
+</div>
 
-    <div id="controls">
-        <div style="display: flex; gap: 15px;">
-            <div class="btn" id="btn-left">⬅️</div>
-            <div class="btn" id="btn-right">➡️</div>
-        </div>
-        <div class="btn" id="btn-jump">🚀</div>
+<div id="controls" style="display:none;">
+    <div style="display:flex; gap:10px;">
+        <div class="btn" id="left">⬅️</div>
+        <div class="btn" id="right">➡️</div>
     </div>
+    <div class="btn" id="jump" style="width:85px; height:85px; border-radius:50%; background:cyan;">🚀</div>
 </div>
 
 <script>
+    // --- SOUND ENGINE (Web Audio API) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(freq, type, duration, vol=0.1) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const soundJump = () => playSound(400, 'square', 0.2);
+    const soundCoin = () => { playSound(800, 'sine', 0.1); setTimeout(() => playSound(1200, 'sine', 0.2), 50); };
+    const soundKill = () => playSound(150, 'sawtooth', 0.2);
+    const soundOver = () => playSound(100, 'square', 0.5);
+
+    // --- GAME ENGINE ---
     const world = document.getElementById('world');
     const player = document.getElementById('player');
     const scoreText = document.getElementById('score');
     const coinText = document.getElementById('coins');
     const hiScoreText = document.getElementById('hi-score');
 
-    let pX = 100, pY = 0, vY = 0, isJump = false;
+    let pX = 100, pY = 0, vY = 0, isJumping = false;
     let score = 0, coins = 0, gameActive = false;
     let moveL = false, moveR = false;
-    
-    const gravity = 0.8, jumpPower = 17, speed = 6;
-    let enemyList = [];
+    let enemies = [];
 
-    // Load High Score
-    let savedHi = localStorage.getItem('yongHi') || 0;
-    hiScoreText.innerText = savedHi;
+    const gravity = 0.8;
+    const jumpPower = 17;
+    const speed = 7;
+
+    hiScoreText.innerText = localStorage.getItem('yongHi') || 0;
 
     function startGame() {
+        audioCtx.resume(); // Safari butuh ini
         document.getElementById('menu').style.display = 'none';
-        document.getElementById('viewport').style.display = 'block';
-        initEnemies();
+        document.getElementById('world').style.display = 'block';
+        document.getElementById('controls').style.display = 'flex';
+        document.getElementById('ui').style.display = 'block';
+        
+        document.querySelectorAll('.enemy').forEach(el => {
+            enemies.push({ el: el, x: parseInt(el.style.left), dir: -1, alive: true });
+        });
+        
         gameActive = true;
         update();
     }
 
-    function initEnemies() {
-        document.querySelectorAll('.enemy').forEach(el => {
-            enemyList.push({ el: el, x: parseInt(el.style.left), dir: -1, dead: false });
-        });
-    }
-
-    // Controls
-    const setup = (id, s, e) => {
+    const listen = (id, s, e) => {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (ev) => { ev.preventDefault(); s(); });
         el.addEventListener('touchend', (ev) => { ev.preventDefault(); e(); });
     };
-    setup('btn-left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
-    setup('btn-right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
-    setup('btn-jump', () => { if(!isJump) { vY = jumpPower; isJump = true; } }, () => {});
+
+    listen('left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
+    listen('right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
+    listen('jump', () => { 
+        if(!isJumping) { 
+            vY = jumpPower; isJumping = true; 
+            soundJump();
+        } 
+    }, () => {});
 
     function update() {
         if(!gameActive) return;
 
-        // Gravitasi
         vY -= gravity;
         pY += vY;
 
         let pRect = player.getBoundingClientRect();
         let onObj = false;
 
-        // FIXED COLLISION (Anti-Mantul)
+        // COLLISION FIX (Presisi Tinggi)
         document.querySelectorAll('.block, .pipe').forEach(obj => {
             let oR = obj.getBoundingClientRect();
-            // Cek jika mendarat tepat di atas
-            if (vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 20 &&
+            if (vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 25 &&
                 pRect.right > oR.left + 5 && pRect.left < oR.right - 5) {
-                pY = window.innerHeight - oR.top - 40; // 40 = tinggi player
-                vY = 0;
-                isJump = false;
-                onObj = true;
+                pY = window.innerHeight - oR.top - 100 - 40; 
+                vY = 0; isJumping = false; onObj = true;
             }
         });
 
-        // Cek Tanah
-        if(!onObj && pY <= 0) { pY = 0; vY = 0; isJump = false; }
+        if(!onObj && pY <= 0) { pY = 0; vY = 0; isJumping = false; }
 
-        // Gerak Player
         if(moveL && pX > 0) pX -= speed;
         if(moveR) pX += speed;
 
-        // Camera Follow
-        let camX = Math.max(0, pX - 150);
-        world.style.transform = `translateX(-${camX}px)`;
+        // Render & Camera
         player.style.left = pX + 'px';
         player.style.bottom = (100 + pY) + 'px';
+        let camX = Math.max(0, pX - 150);
+        world.style.transform = `translateX(-${camX}px)`;
 
-        // Update Musuh (Jalan Otomatis)
-        enemyList.forEach(en => {
-            if(en.dead) return;
-            en.x += (en.dir * 2);
+        // Enemy AI
+        enemies.forEach(en => {
+            if(!en.alive) return;
+            en.x += (en.dir * 2.5);
             en.el.style.left = en.x + 'px';
             
-            // Balik arah sederhana (tiap rute tertentu)
-            if(Math.random() < 0.01) en.dir *= -1;
-
             let eR = en.el.getBoundingClientRect();
-            if(pRect.right > eR.left + 5 && pRect.left < eR.right - 5 && pRect.bottom > eR.top) {
-                if(vY < 0) { // Injak Musuh
-                    en.dead = true;
-                    en.el.innerText = '💥';
+            if(pRect.right > eR.left + 10 && pRect.left < eR.right - 10 && pRect.bottom > eR.top) {
+                if(vY < 0) { // Injak
+                    en.alive = false; en.el.innerText = '💥';
+                    soundKill();
                     setTimeout(() => en.el.remove(), 200);
-                    vY = 12; // Mental ke atas
-                    score += 100;
-                    scoreText.innerText = score;
-                } else { gameOver(); } // Nabrak samping
+                    vY = 12; score += 100; scoreText.innerText = score;
+                } else { // Mati
+                    gameOver();
+                }
             }
         });
 
-        // Ambil Koin
+        // Coin Collision
         document.querySelectorAll('.coin').forEach(c => {
             let cR = c.getBoundingClientRect();
             if(pRect.right > cR.left && pRect.left < cR.right && pRect.bottom > cR.top && pRect.top < cR.bottom) {
                 c.remove(); coins++; score += 50;
+                soundCoin();
                 coinText.innerText = coins; scoreText.innerText = score;
             }
         });
 
-        // Finish
-        if(pX > 4000) { gameActive = false; alert("LEVEL CLEAR! Skor: " + score); location.reload(); }
+        if(pX > 5000) { alert("STAGE CLEAR!"); location.reload(); }
 
         requestAnimationFrame(update);
     }
 
     function gameOver() {
         gameActive = false;
-        if(score > savedHi) localStorage.setItem('yongHi', score);
-        alert("GAME OVER!\nScore: " + score);
+        soundOver();
+        const hi = localStorage.getItem('yongHi') || 0;
+        if(score > hi) localStorage.setItem('yongHi', score);
+        alert("GAME OVER! Skor: " + score);
         location.reload();
     }
 
-    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
 </script>
+
 </body>
 </html>
