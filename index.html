@@ -1,176 +1,164 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yong vs Asti - Fighter Edition</title>
+    <title>Prince Adventure</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
-        :root { --yong: #00f2ff; --asti: #bf00ff; }
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; height: 100vh; display: flex; flex-direction: column; }
+        body { margin: 0; overflow: hidden; background: #5c94fc; font-family: sans-serif; touch-action: none; }
+        #game-box { position: relative; width: 100vw; height: 100vh; }
         
-        #game-world { position: relative; flex: 1; background: radial-gradient(circle at center, #111 0%, #000 100%); overflow: hidden; }
+        /* Tanah */
+        #ground { position: absolute; bottom: 0; width: 200%; height: 50px; background: #885010; border-top: 5px solid #4a2a05; }
         
-        /* Karakter */
-        .char { position: absolute; width: 45px; height: 65px; bottom: 20px; will-change: transform; border-radius: 4px; }
-        #yong { background: var(--yong); box-shadow: 0 0 20px var(--yong); left: 0; }
-        #asti { background: var(--asti); box-shadow: 0 0 20px var(--asti); left: 0; }
-        
-        /* Visual Pedang Yong */
-        #sword-fx { position: absolute; width: 60px; height: 60px; border: 4px solid #fff; border-radius: 50%; opacity: 0; pointer-events: none; box-shadow: 0 0 15px #fff; }
+        /* Pangeran */
+        #player { 
+            position: absolute; bottom: 50px; left: 50px; 
+            font-size: 50px; width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
 
-        /* Proyektil Asti */
-        .magic-ball { position: absolute; width: 15px; height: 15px; background: #ff00ff; border-radius: 50%; box-shadow: 0 0 10px #ff00ff; }
+        /* Musuh (Penyihir) */
+        .witch { position: absolute; bottom: 50px; font-size: 40px; }
 
-        /* UI */
-        .ui { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-around; z-index: 10; }
-        .hp-box { text-align: center; }
-        .bar { width: 130px; height: 12px; background: #333; border-radius: 6px; border: 1px solid #555; overflow: hidden; margin-top: 5px; }
-        .fill { height: 100%; width: 100%; transition: width 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        /* Awan/Latar */
+        .cloud { position: absolute; top: 50px; font-size: 40px; opacity: 0.6; }
 
-        /* Controls */
-        #controls { height: 220px; background: #0a0a0a; display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; padding: 10px; border-top: 2px solid #222; }
-        .btn { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; active { background: #333; } }
-        .atk-btn { grid-column: span 3; background: linear-gradient(to bottom, #004e52, #001a1b); border-color: var(--yong); color: var(--yong); font-size: 18px; }
+        /* Kontrol */
+        #controls { 
+            position: absolute; bottom: 70px; width: 100%; 
+            display: flex; justify-content: space-around; z-index: 20;
+        }
+        .btn { 
+            background: rgba(255,255,255,0.3); padding: 20px; border-radius: 50%;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: white; border: 2px solid white;
+        }
+
+        #score { position: absolute; top: 40px; left: 20px; font-size: 1.5rem; font-weight: bold; color: white; }
     </style>
 </head>
 <body>
 
-<div id="game-world">
-    <div class="ui">
-        <div class="hp-box"><div style="color:var(--yong); font-size:12px; font-weight:bold">YONG</div><div class="bar"><div id="yhp" class="fill" style="background:var(--yong)"></div></div></div>
-        <div class="hp-box"><div style="color:var(--asti); font-size:12px; font-weight:bold">ASTI</div><div class="bar"><div id="ahp" class="fill" style="background:var(--asti)"></div></div></div>
-    </div>
-    <div id="yong" class="char"></div>
-    <div id="asti" class="char"></div>
-    <div id="sword-fx"></div>
-</div>
+<div id="game-box">
+    <div id="score">Skor: 0</div>
+    <div class="cloud" style="left: 10%;">☁️</div>
+    <div class="cloud" style="left: 60%; top: 80px;">☁️</div>
+    
+    <div id="player">🤴</div>
+    <div id="ground"></div>
 
-<div id="controls">
-    <div class="btn" id="lBtn">MUNDUR</div>
-    <div class="btn" id="jBtn">LOMPAT</div>
-    <div class="btn" id="rBtn">MAJU</div>
-    <div class="btn atk-btn" id="aBtn">TEBASAN PEDANG</div>
+    <div id="controls">
+        <div class="btn" id="btn-left">⬅️</div>
+        <div class="btn" id="btn-jump">🚀</div>
+        <div class="btn" id="btn-right">➡️</div>
+    </div>
 </div>
 
 <script>
-        const yEl = document.getElementById('yong');
-    const aEl = document.getElementById('asti');
-    const sEl = document.getElementById('sword-fx');
-    const world = document.getElementById('game-world');
+    const player = document.getElementById('player');
+    const scoreElement = document.getElementById('score');
+    let posX = 50;
+    let posY = 50; // Jarak dari bawah (ground)
+    let velocityY = 0;
+    let isJumping = false;
+    let score = 0;
+    let gameActive = true;
 
-    let p = { x: 50, y: 0, vy: 0, hp: 100, jump: false, dir: 1 };
-    let e = { x: 250, hp: 100 };
-    let balls = [];
-    let moveDir = 0;
-    let frameCount = 0;
+    // Setting Fisika
+    const gravity = 1.2;
+    const jumpPower = 18;
+    const speed = 7;
 
-    function spawnMagic() {
-        const ball = document.createElement('div');
-        ball.className = 'magic-ball';
-        const bx = e.x;
-        // Tentukan arah tembakan berdasarkan posisi Yong
-        const bDir = (p.x > e.x) ? 1 : -1;
-        world.appendChild(ball);
-        balls.push({ el: ball, x: bx, y: 40, dx: bDir * 6 });
-    }
+    // Gerak Kiri Kanan
+    let moveLeft = false;
+    let moveRight = false;
 
-    function gameLoop() {
-        frameCount++;
-
-        // --- GERAK YONG ---
-        p.x += moveDir;
-        if(p.x < 0) p.x = 0;
-        if(p.x > world.clientWidth - 45) p.x = world.clientWidth - 45;
-        
-        if(p.jump) {
-            p.vy -= 0.8;
-            p.y += p.vy;
-            if(p.y <= 0) { p.y = 0; p.vy = 0; p.jump = false; }
+    // Kontrol HP
+    document.getElementById('btn-left').ontouchstart = () => moveLeft = true;
+    document.getElementById('btn-left').ontouchend = () => moveLeft = false;
+    document.getElementById('btn-right').ontouchstart = () => moveRight = true;
+    document.getElementById('btn-right').ontouchend = () => moveRight = false;
+    document.getElementById('btn-jump').ontouchstart = () => {
+        if (!isJumping) {
+            velocityY = jumpPower;
+            isJumping = true;
         }
-
-        // --- GERAK ASTI (AI AGRESIF) ---
-        let jarak = p.x - e.x;
-        
-        // Logika: Asti akan selalu menjaga jarak aman (150px)
-        if (Math.abs(jarak) < 130) {
-            e.x += (jarak > 0 ? -3 : 3); // Mundur kalau Yong mendekat
-        } else if (Math.abs(jarak) > 200) {
-            e.x += (jarak > 0 ? 2 : -2); // Kejar kalau Yong menjauh
-        }
-
-        // Batasi gerak Asti agar tidak keluar layar
-        if(e.x < 10) e.x = 10;
-        if(e.x > world.clientWidth - 45) e.x = world.clientWidth - 45;
-
-        // Asti nembak otomatis tiap 1.5 detik
-        if (frameCount % 90 === 0) {
-            spawnMagic();
-        }
-
-        // --- LOGIKA PELURU SIHIR ---
-        for (let i = balls.length - 1; i >= 0; i--) {
-            let b = balls[i];
-            b.x += b.dx;
-            b.el.style.transform = `translate(${b.x}px, -40px)`;
-            
-            // Cek kena Yong
-            if (Math.abs(b.x - p.x) < 30 && p.y < 50) {
-                p.hp -= 5;
-                document.getElementById('yhp').style.width = p.hp + "%";
-                b.el.remove();
-                balls.splice(i, 1);
-            } 
-            // Hapus kalau lewat layar
-            else if (b.x < -50 || b.x > world.clientWidth + 50) {
-                b.el.remove();
-                balls.splice(i, 1);
-            }
-        }
-
-        // --- UPDATE POSISI GAMBAR ---
-        yEl.style.transform = `translate(${p.x}px, ${-p.y}px)`;
-        aEl.style.transform = `translate(${e.x}px, 0px)`;
-
-        // Kondisi Menang/Kalah
-        if(p.hp <= 0 || e.hp <= 0) {
-            alert(p.hp <= 0 ? "YONG KALAH!" : "YONG MENANG!");
-            location.reload();
-            return;
-        }
-
-        requestAnimationFrame(gameLoop);
-    }
-
-    // --- KONTROL TOMBOL HP ---
-    const bind = (id, start, end) => {
-        const el = document.getElementById(id);
-        el.ontouchstart = (ev) => { ev.preventDefault(); start(); };
-        el.ontouchend = (ev) => { ev.preventDefault(); end(); };
     };
 
-    bind('lBtn', () => { moveDir = -5; p.dir = -1; }, () => moveDir = 0);
-    bind('rBtn', () => { moveDir = 5; p.dir = 1; }, () => moveDir = 0);
-    bind('jBtn', () => { if(!p.jump){ p.vy = 15; p.jump = true; }}, () => {});
-    
-    bind('aBtn', () => {
-        // Visual tebasan
-        let sx = p.x + (p.dir === 1 ? 45 : -45);
-        sEl.style.left = sx + "px";
-        sEl.style.bottom = (p.y + 20) + "px";
-        sEl.style.opacity = "1";
-        setTimeout(() => sEl.style.opacity = "0", 100);
+    function spawnWitch() {
+        if (!gameActive) return;
+        const witch = document.createElement('div');
+        witch.className = 'witch';
+        witch.innerText = '🧙‍♀️';
+        witch.style.right = '-50px';
+        document.getElementById('game-box').appendChild(witch);
 
-        // Cek tebasan kena Asti
-        if(Math.abs(sx - e.x) < 60 && p.y < 60) {
-            e.hp -= 10;
-            document.getElementById('ahp').style.width = e.hp + "%";
-            aEl.style.background = "white"; // Efek flash putih pas kena
-            setTimeout(() => aEl.style.background = "var(--asti)", 100);
+        let witchPos = -50;
+        let witchInterval = setInterval(() => {
+            if (!gameActive) { clearInterval(witchInterval); return; }
+            
+            witchPos += 5 + (score/5); // Makin lama makin cepet
+            witch.style.right = witchPos + 'px';
+
+            // Cek Tabrakan (Hitbox)
+            let playerRect = player.getBoundingClientRect();
+            let witchRect = witch.getBoundingClientRect();
+
+            if (
+                playerRect.right > witchRect.left &&
+                playerRect.left < witchRect.right &&
+                playerRect.bottom > witchRect.top
+            ) {
+                gameOver();
+            }
+
+            // Lolos musuh
+            if (witchPos > window.innerWidth + 50) {
+                clearInterval(witchInterval);
+                witch.remove();
+                score++;
+                scoreElement.innerText = `Skor: ${score}`;
+            }
+        }, 20);
+        
+        setTimeout(spawnWitch, Math.random() * 2000 + 1000);
+    }
+
+    function update() {
+        if (!gameActive) return;
+
+        // Gravitasi
+        velocityY -= gravity;
+        posY += velocityY;
+
+        if (posY <= 50) {
+            posY = 50;
+            isJumping = false;
+            velocityY = 0;
         }
-    }, () => {});
 
-    // Jalankan game
-    gameLoop();
+        // Gerakan Kiri/Kanan
+        if (moveLeft && posX > 0) posX -= speed;
+        if (moveRight && posX < window.innerWidth - 50) posX += speed;
+
+        player.style.bottom = posY + 'px';
+        player.style.left = posX + 'px';
+
+        requestAnimationFrame(update);
+    }
+
+    function gameOver() {
+        gameActive = false;
+        alert("Pangeran Tertangkap Penyihir! Skor kamu: " + score);
+        location.reload();
+    }
+
+    update();
+    spawnWitch();
 </script>
+
 </body>
 </html>
