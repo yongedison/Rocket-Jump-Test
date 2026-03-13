@@ -3,77 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Prince Run</title>
+    <title>Prince Run - Pro Controls</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #5c94fc; 
-            font-family: -apple-system, sans-serif; 
-            touch-action: none; /* Kunci layar biar nggak geser-geser */
-        }
-        #game-box { position: relative; width: 100vw; height: 100vh; }
-        
-        /* Tanah */
-        #ground { 
-            position: absolute; 
-            bottom: 120px; 
-            width: 100%; 
-            height: 40px; 
-            background: #885010; 
-            border-top: 4px solid #4a2a05; 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: #5c94fc; font-family: -apple-system, sans-serif; 
+            touch-action: none; width: 100vw; height: 100vh;
         }
         
-        /* Pangeran */
+        #ground { position: absolute; bottom: 180px; width: 100%; height: 40px; background: #885010; border-top: 4px solid #4a2a05; }
+        
         #player { 
-            position: absolute; 
-            bottom: 160px; 
-            left: 50px; 
-            font-size: 50px; 
-            width: 50px; 
-            height: 50px;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            z-index: 10;
+            position: absolute; width: 50px; height: 50px;
+            font-size: 50px; display: flex; align-items: center; justify-content: center;
+            z-index: 10; bottom: 220px; left: 50px;
         }
 
-        /* Penyihir */
-        .witch { position: absolute; bottom: 160px; font-size: 40px; z-index: 5; }
+        .witch { position: absolute; bottom: 220px; font-size: 40px; z-index: 5; }
+        #score { position: absolute; top: 60px; left: 20px; font-size: 1.8rem; font-weight: bold; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
 
-        /* Kontrol - Area Aman iPhone */
-        #controls { 
-            position: absolute; 
-            bottom: 30px; 
-            width: 100%; 
-            display: flex; 
-            justify-content: center; 
-            gap: 25px;
+        /* AREA KONTROL BARU */
+        #controls-container {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between; /* Pisahkan kiri dan kanan */
+            padding: 0 30px;
             z-index: 100;
         }
+
+        .move-group { display: flex; gap: 15px; } /* Grup tombol kiri */
+
         .btn { 
-            background: rgba(255,255,255,0.5); 
-            width: 70px; 
-            height: 70px; 
-            border-radius: 50%;
+            background: rgba(255,255,255,0.3); 
+            backdrop-filter: blur(5px);
+            width: 80px; 
+            height: 80px; 
+            border-radius: 20px;
             display: flex; 
             align-items: center; 
             justify-content: center;
-            font-size: 2rem; 
-            border: 3px solid white;
-            user-select: none;
-            -webkit-user-select: none;
+            font-size: 2.2rem; 
+            border: 3px solid rgba(255,255,255,0.8);
+            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
+            transition: all 0.05s;
         }
 
-        #score { 
-            position: absolute; 
-            top: 50px; 
-            left: 20px; 
-            font-size: 1.5rem; 
-            font-weight: bold; 
-            color: white; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); 
+        .btn:active { 
+            background: rgba(255,255,255,0.8); 
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+
+        #btn-jump { 
+            background: rgba(0, 212, 255, 0.4);
+            border-color: #00d4ff;
+            width: 90px; /* Tombol loncat agak lebih besar biar gampang kena */
+            height: 90px;
         }
     </style>
 </head>
@@ -84,10 +73,13 @@
     <div id="player">🤴</div>
     <div id="ground"></div>
 
-    <div id="controls">
-        <div class="btn" id="btn-left">⬅️</div>
+    <div id="controls-container">
+        <div class="move-group">
+            <div class="btn" id="btn-left">⬅️</div>
+            <div class="btn" id="btn-right">➡️</div>
+        </div>
+
         <div class="btn" id="btn-jump">🚀</div>
-        <div class="btn" id="btn-right">➡️</div>
     </div>
 </div>
 
@@ -95,36 +87,30 @@
     const player = document.getElementById('player');
     const scoreElement = document.getElementById('score');
     
-    // Posisi awal
     let posX = 50;
-    let posY = 160; 
+    let posY = 0; 
     let velocityY = 0;
     let isJumping = false;
     let score = 0;
     let gameActive = true;
 
-    // Fisika
-    const gravity = 1.0;
-    const jumpPower = 16;
+    const gravity = 0.8;
+    const jumpPower = 15;
     const speed = 6;
 
     let moveLeft = false;
     let moveRight = false;
 
-    // Fungsi Gerak (Touch Start)
-    document.getElementById('btn-left').addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
-    document.getElementById('btn-right').addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
-    document.getElementById('btn-jump').addEventListener('touchstart', (e) => { 
-        e.preventDefault();
-        if (!isJumping) {
-            velocityY = jumpPower;
-            isJumping = true;
-        }
-    });
+    // Helper untuk Input
+    const bindBtn = (id, start, end) => {
+        const el = document.getElementById(id);
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); start(); });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); end(); });
+    };
 
-    // Fungsi Berhenti (Touch End)
-    document.getElementById('btn-left').addEventListener('touchend', () => moveLeft = false);
-    document.getElementById('btn-right').addEventListener('touchend', () => moveRight = false);
+    bindBtn('btn-left', () => moveLeft = true, () => moveLeft = false);
+    bindBtn('btn-right', () => moveRight = true, () => moveRight = false);
+    bindBtn('btn-jump', () => { if(!isJumping) { velocityY = jumpPower; isJumping = true; } }, () => {});
 
     function spawnWitch() {
         if (!gameActive) return;
@@ -136,61 +122,39 @@
 
         let witchX = window.innerWidth;
         let witchInterval = setInterval(() => {
-            if (!gameActive) { clearInterval(witchInterval); return; }
-            
-            witchX -= (4 + (score / 5)); 
+            if (!gameActive) { clearInterval(witchInterval); witch.remove(); return; }
+            witchX -= (5 + (score / 5)); 
             witch.style.left = witchX + 'px';
 
-            // Cek Tabrakan
             let pRect = player.getBoundingClientRect();
             let wRect = witch.getBoundingClientRect();
 
-            if (pRect.right > wRect.left + 10 && pRect.left < wRect.right - 10 && pRect.bottom > wRect.top + 10) {
-                gameOver();
+            if (pRect.right > wRect.left + 15 && pRect.left < wRect.right - 15 && pRect.bottom > wRect.top + 10) {
+                gameActive = false;
+                alert("Game Over! Skor: " + score);
+                location.reload();
             }
 
-            if (witchX < -50) {
-                clearInterval(witchInterval);
-                witch.remove();
-                score++;
-                scoreElement.innerText = `Skor: ${score}`;
-            }
+            if (witchX < -50) { clearInterval(witchInterval); witch.remove(); score++; scoreElement.innerText = `Skor: ${score}`; }
         }, 20);
-        
-        setTimeout(spawnWitch, Math.random() * 2000 + 1000);
+        setTimeout(spawnWitch, Math.random() * 2000 + 1500);
     }
 
     function update() {
         if (!gameActive) return;
-
-        // Loncat & Gravitasi
-        velocityY -= gravity;
-        posY -= velocityY; // Di CSS 'bottom' bertambah artinya naik
-
-        if (posY >= 160) {
-            posY = 160;
-            isJumping = false;
-            velocityY = 0;
-        }
-
-        // Geser Kiri Kanan
+        if (isJumping || posY > 0) { velocityY -= gravity; posY += velocityY; }
+        if (posY <= 0) { posY = 0; isJumping = false; velocityY = 0; }
         if (moveLeft && posX > 0) posX -= speed;
-        if (moveRight && posX < window.innerWidth - 50) posX += speed;
+        if (moveRight && posX < window.innerWidth - 60) posX += speed;
 
-        player.style.top = posY + 'px'; // Kita pakai 'top' biar lebih stabil di update
+        player.style.bottom = (220 + posY) + 'px';
         player.style.left = posX + 'px';
-
         requestAnimationFrame(update);
-    }
-
-    function gameOver() {
-        gameActive = false;
-        alert("Game Over! Skor kamu: " + score);
-        location.reload();
     }
 
     update();
     spawnWitch();
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 </script>
 
 </body>
