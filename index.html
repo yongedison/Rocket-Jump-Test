@@ -3,45 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yong vs Asti Fix</title>
+    <title>Yong vs Asti - Ground Battle</title>
     <style>
         :root { --yong: #00f2ff; --asti: #bf00ff; }
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; touch-action: none; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         canvas { display: block; }
         
         #ui-top {
-            position: fixed; top: 10px; width: 100%; display: flex;
-            justify-content: space-around; pointer-events: none; z-index: 10;
+            position: fixed; top: 20px; width: 100%; display: flex;
+            justify-content: space-around; z-index: 10; pointer-events: none;
         }
-        .hp-bar { width: 120px; height: 10px; background: #222; border-radius: 5px; margin-top: 5px; overflow: hidden;}
+        .hp-bar { width: 130px; height: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; overflow: hidden; margin-top: 5px; }
         .hp-fill { height: 100%; width: 100%; transition: 0.2s; }
-        #yong-hp { background: var(--yong); box-shadow: 0 0 10px var(--yong); }
-        #asti-hp { background: var(--asti); box-shadow: 0 0 10px var(--asti); }
-        .label { color: white; font-size: 10px; text-align: center; }
+        .label { color: white; font-size: 10px; font-weight: bold; text-align: center; }
 
         #controls { 
-            position: fixed; bottom: 20px; width: 100%; 
-            display: flex; justify-content: space-evenly; align-items: center; z-index: 10;
+            position: fixed; bottom: 25px; width: 100%; 
+            display: flex; justify-content: space-evenly; z-index: 10;
         }
         .btn { 
-            width: 65px; height: 65px; background: rgba(255,255,255,0.1); 
-            border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; 
+            width: 70px; height: 70px; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; 
             display: flex; align-items: center; justify-content: center; color: white;
         }
-        .attack-btn { border-color: var(--yong); color: var(--yong); width: 80px; height: 80px; }
+        .attack-btn { border-color: var(--yong); color: var(--yong); width: 85px; height: 85px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div id="ui-top">
-    <div>
-        <div class="label">YONG</div>
-        <div class="hp-bar"><div id="yong-hp" class="hp-fill"></div></div>
-    </div>
-    <div>
-        <div class="label">ASTI</div>
-        <div class="hp-bar"><div id="asti-hp" class="hp-fill"></div></div>
-    </div>
+    <div><div class="label">YONG</div><div class="hp-bar"><div id="yhp" class="hp-fill" style="background: var(--yong)"></div></div></div>
+    <div><div class="label">ASTI</div><div class="hp-bar"><div id="ahp" class="hp-fill" style="background: var(--asti)"></div></div></div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -49,118 +41,114 @@
 <div id="controls">
     <div class="btn" id="lBtn">◄</div>
     <div class="btn" id="rBtn">►</div>
-    <div class="btn" id="jBtn">UP</div>
+    <div class="btn" id="jBtn">JUMP</div>
     <div class="btn attack-btn" id="aBtn">SLASH</div>
 </div>
 
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-
-    // FIX: Ukuran canvas disesuaikan agar tidak tertutup tombol
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const floorY = canvas.height - 150; // Lantai di atas tombol
-
-    const yong = { x: 50, y: floorY - 60, w: 30, h: 50, dx: 0, dy: 0, hp: 100, isJumping: false, isAtk: false, atkF: 0 };
-    const asti = { x: canvas.width - 80, y: 200, w: 35, h: 55, hp: 100, dir: 1, lastS: 0, tele: false };
+    const floorY = canvas.height - 150;
+    const yong = { x: 50, y: floorY-65, w: 40, h: 65, dx: 0, dy: 0, hp: 100, isJumping: false, isAtk: false, atkF: 0, side: 1 };
+    const asti = { x: canvas.width - 120, y: floorY-70, w: 45, h: 70, hp: 100, dx: 0, lastS: 0, tele: false, side: -1 };
     const projectiles = [];
 
-    function update() {
-        ctx.fillStyle = "#050505";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Lantai
-        ctx.fillStyle = "#111";
-        ctx.fillRect(0, floorY, canvas.width, canvas.height - floorY);
-        ctx.strokeStyle = "#00f2ff";
-        ctx.strokeRect(0, floorY, canvas.width, 1);
-
-        // Physics Yong
-        yong.dy += 0.6; // Gravity
-        yong.y += yong.dy;
-        yong.x += yong.dx;
-
-        if (yong.y + yong.h > floorY) {
-            yong.y = floorY - yong.h;
-            yong.dy = 0;
-            yong.isJumping = false;
+    function drawChar(e, color, isAsti=false) {
+        if(isAsti && asti.tele) return;
+        ctx.save();
+        ctx.shadowBlur = 15; ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+        
+        // Detail Tambahan
+        ctx.fillStyle = isAsti ? "red" : "white"; // Mata
+        let eyeX = e.side === 1 ? e.x + e.w - 10 : e.x + 5;
+        ctx.fillRect(eyeX, e.y + 15, 5, 5);
+        
+        if(isAsti) { // Tongkat Asti
+            ctx.fillStyle = "#5d4037";
+            ctx.fillRect(e.x - 5, e.y + 10, 5, 50);
         }
+        ctx.restore();
+    }
 
-        // Asti Hovering
+    function update() {
+        ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#111"; ctx.fillRect(0, floorY, canvas.width, canvas.height); // Lantai
+
+        // Yong Physics
+        yong.dy += 0.7; yong.y += yong.dy; yong.x += yong.dx;
+        if (yong.y + yong.h > floorY) { yong.y = floorY - yong.h; yong.dy = 0; yong.isJumping = false; }
+        if (yong.dx !== 0) yong.side = yong.dx > 0 ? 1 : -1;
+
+        // Asti Ground AI
         if(!asti.tele) {
-            asti.y += 1.5 * asti.dir;
-            if(asti.y > floorY - 100 || asti.y < 50) asti.dir *= -1;
-            
-            // Asti nembak
-            if(Date.now() - asti.lastS > 1800) {
-                projectiles.push({x: asti.x, y: asti.y + 20});
+            let dist = yong.x - asti.x;
+            asti.side = dist > 0 ? 1 : -1;
+
+            // Logika Gerak: Jaga Jarak
+            if(Math.abs(dist) > 200) asti.x += (dist > 0 ? 2 : -2); // Dekati jika jauh
+            else if(Math.abs(dist) < 100) asti.x += (dist > 0 ? -3 : 3); // Mundur jika terlalu dekat
+
+            // Tembak sihir horizontal
+            if(Date.now() - asti.lastS > 1500) {
+                projectiles.push({x: asti.x + (asti.side*20), y: asti.y + 30, dx: asti.side * 7});
                 asti.lastS = Date.now();
             }
         }
 
-        // Draw Yong
-        ctx.fillStyle = "#00f2ff";
-        ctx.shadowBlur = 15; ctx.shadowColor = "#00f2ff";
-        ctx.fillRect(yong.x, yong.y, yong.w, yong.h);
+        // Projectiles
+        projectiles.forEach((p, i) => {
+            p.x += p.dx;
+            ctx.fillStyle = "magenta"; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 7); ctx.fill();
+            if(p.x > yong.x && p.x < yong.x + yong.w && p.y > yong.y && p.y < yong.y + yong.h) {
+                yong.hp -= 10; projectiles.splice(i, 1);
+            }
+            if(p.x < 0 || p.x > canvas.width) projectiles.splice(i, 1);
+        });
 
-        // Draw Slash
+        // Slash & Hit
         if(yong.isAtk) {
-            ctx.fillStyle = "white";
-            ctx.fillRect(yong.x + yong.w, yong.y, 40, yong.h);
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            let sw = 50;
+            let sx = yong.side === 1 ? yong.x + yong.w : yong.x - sw;
+            ctx.fillRect(sx, yong.y + 10, sw, 20);
             yong.atkF++;
-            if(yong.x + yong.w + 40 > asti.x && yong.x < asti.x + asti.w && yong.y < asti.y + asti.h && yong.y + yong.h > asti.y) {
-                if(yong.atkF == 1) {
+            if(sx + sw > asti.x && sx < asti.x + asti.w && yong.y < asti.y + asti.h && yong.y + yong.h > asti.y) {
+                if(yong.atkF === 1) {
                     asti.hp -= 10;
                     asti.tele = true;
                     setTimeout(() => { 
-                        asti.x = Math.random() * (canvas.width - 100) + 50; 
+                        asti.x = yong.x + (yong.side === 1 ? -200 : 200); // Teleport ke belakang/depan
+                        if(asti.x < 0) asti.x = 50; if(asti.x > canvas.width-50) asti.x = canvas.width-100;
                         asti.tele = false; 
-                    }, 100);
+                    }, 200);
                 }
             }
-            if(yong.atkF > 5) { yong.isAtk = false; yong.atkF = 0; }
+            if(yong.atkF > 8) { yong.isAtk = false; yong.atkF = 0; }
         }
 
-        // Draw Asti
-        if(!asti.tele) {
-            ctx.fillStyle = "#bf00ff";
-            ctx.shadowColor = "#bf00ff";
-            ctx.fillRect(asti.x, asti.y, asti.w, asti.h);
-        }
-
-        // Projectiles
-        projectiles.forEach((p, i) => {
-            p.x -= 6;
-            ctx.fillStyle = "magenta";
-            ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 7); ctx.fill();
-            if(p.x < yong.x + yong.w && p.x > yong.x && p.y > yong.y && p.y < yong.y + yong.h) {
-                yong.hp -= 10;
-                projectiles.splice(i, 1);
-            }
-            if(p.x < 0) projectiles.splice(i, 1);
-        });
-
-        document.getElementById('yong-hp').style.width = yong.hp + "%";
-        document.getElementById('asti-hp').style.width = asti.hp + "%";
-
-        if(yong.hp <= 0 || asti.hp <= 0) { alert(yong.hp <= 0 ? "Kalah!" : "Menang!"); location.reload(); return; }
-
-        ctx.shadowBlur = 0;
+        drawChar(yong, var(--yong));
+        drawChar(asti, var(--asti), true);
+        
+        document.getElementById('yhp').style.width = yong.hp + "%";
+        document.getElementById('ahp').style.width = asti.hp + "%";
+        if(yong.hp <= 0 || asti.hp <= 0) { alert(yong.hp <= 0 ? "Yong Kalah!" : "Asti Kalah!"); location.reload(); return; }
+        
         requestAnimationFrame(update);
     }
 
-    // Controls Fix
     const b = (id, f) => {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (e) => { e.preventDefault(); f(true); });
         el.addEventListener('touchend', (e) => { e.preventDefault(); f(false); });
     }
-
     b('lBtn', (v) => yong.dx = v ? -5 : 0);
     b('rBtn', (v) => yong.dx = v ? 5 : 0);
-    b('jBtn', (v) => { if(v && !yong.isJumping) { yong.dy = -12; yong.isJumping = true; }});
+    b('jBtn', (v) => { if(v && !yong.isJumping) { yong.dy = -13; yong.isJumping = true; }});
     b('aBtn', (v) => { if(v) yong.isAtk = true; });
 
     update();
