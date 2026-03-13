@@ -3,137 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Super Yong World - Anti-Bouncing</title>
+    <title>Super Yong Ultimate</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; overflow: hidden; background: #5c94fc; font-family: sans-serif; touch-action: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { margin: 0; overflow: hidden; background: #5c94fc; font-family: 'Courier New', Courier, monospace; touch-action: none; }
+        
+        /* Layar Utama */
+        #game-container { position: relative; width: 100vw; height: 100vh; display: none; }
+        #world { position: absolute; height: 100%; width: 10000px; transition: transform 0.05s linear; }
+        
+        /* Elemen Visual */
+        #ground { position: absolute; bottom: 0; width: 100%; height: 100px; background: #885010; border-top: 6px solid #4a2a05; }
+        #player { position: absolute; width: 40px; height: 40px; font-size: 35px; z-index: 100; display: flex; align-items: center; justify-content: center; bottom: 100px; }
+        .platform { position: absolute; background: #ff9441; border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010; z-index: 10; border-radius: 4px; }
+        .pipe { position: absolute; background: #2ecc71; width: 70px; border: 4px solid #000; z-index: 9; border-radius: 8px 8px 0 0; bottom: 100px; }
+        .pipe::after { content: ''; position: absolute; top: 0; left: -6px; width: 74px; height: 20px; background: #2ecc71; border: 4px solid #000; border-radius: 4px; }
+        .coin { position: absolute; font-size: 25px; z-index: 8; text-align: center; }
+        .enemy { position: absolute; bottom: 100px; font-size: 32px; z-index: 10; width: 40px; height: 40px; }
+        .flag { position: absolute; bottom: 100px; font-size: 70px; z-index: 5; }
+
+        /* UI */
+        #hud { position: fixed; top: 40px; left: 20px; color: white; font-size: 1.2rem; font-weight: bold; z-index: 500; text-shadow: 2px 2px #000; }
         #menu { position: fixed; inset: 0; background: #5c94fc; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; }
+        .start-btn { padding: 15px 40px; font-size: 1.8rem; background: #e74c3c; border: 4px solid #fff; color: #fff; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 0 #c0392b; }
         
-        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: none; }
-        #world { position: absolute; top: 0; left: 0; height: 100%; width: 5000px; }
-        #ground { position: absolute; bottom: 0; width: 100%; height: 100px; background: #885010; border-top: 5px solid #4a2a05; }
-        
-        #player { position: absolute; width: 40px; height: 40px; font-size: 35px; z-index: 100; bottom: 100px; left: 100px; }
-        .block { position: absolute; background: #ff9441; border: 3px solid #000; z-index: 10; }
-        .pipe { position: absolute; background: #2ecc71; width: 60px; border: 3px solid #000; border-radius: 5px 5px 0 0; bottom: 100px; z-index: 9; }
-        .coin { position: absolute; font-size: 25px; z-index: 8; }
-        
-        #ui { position: fixed; top: 40px; left: 20px; color: white; font-weight: bold; z-index: 500; text-shadow: 2px 2px #000; }
-        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 500; }
-        .btn { background: rgba(255,255,255,0.4); width: 70px; height: 70px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 2px solid white; }
+        /* Kontrol iPhone */
+        #controls { position: fixed; bottom: 40px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; z-index: 500; }
+        .ctrl-btn { background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; border: 3px solid #fff; }
+        #btn-jump { background: rgba(0,212,255,0.4); border-color: #00d4ff; width: 100px; height: 100px; border-radius: 50%; }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1>SUPER YONG WORLD</h1>
-    <button class="btn-start" onclick="startGame()">START</button>
+    <h1 style="font-size: 3.5rem; margin-bottom: 5px;">SUPER YONG</h1>
+    <p style="font-size: 1.2rem;">HI-SCORE: <span id="hi-score">0</span></p>
+    <button class="start-btn" onclick="initGame()">PLAY NOW</button>
 </div>
 
-<div id="viewport">
-    <div id="ui">🪙 <span id="coins">0</span> | Score: <span id="score">0</span></div>
+<div id="game-container">
+    <div id="hud">🪙 <span id="coins">0</span> | SCORE: <span id="score">0</span></div>
     <div id="world">
         <div id="ground"></div>
         <div id="player">🤴</div>
         
-        <div class="pipe" data-x="400" data-y="70" style="left:400px; height:70px;"></div>
-        <div class="block" data-x="650" data-y="180" data-w="120" style="left:650px; bottom:280px; width:120px; height:40px;"></div>
-        <div class="block" data-x="900" data-y="280" data-w="120" style="left:900px; bottom:380px; width:120px; height:40px;"></div>
-    </div>
+        <div class="pipe" style="left: 500px; height: 70px;"></div>
+        <div class="platform" style="bottom: 250px; left: 700px; width: 120px; height: 40px;"></div>
+        <div class="coin" style="bottom: 300px; left: 740px;">💰</div>
+        
+        <div class="enemy" data-x="1000" style="left: 1000px;">👾</div>
+        <div class="platform" style="bottom: 220px; left: 1200px; width: 40px; height: 40px;"></div>
+        <div class="platform" style="bottom: 320px; left: 1300px; width: 40px; height: 40px;"></div>
+        <div class="platform" style="bottom: 420px; left: 1400px; width: 40px; height: 40px;"></div>
+        <div class="coin" style="bottom: 470px; left: 1405px;">💰</div>
+
+        <div class="pipe" style="left: 1700px; height: 120px;"></div>
+        <div class="enemy" data-x="2000" style="left: 2000px;">👾</div>
+        <div class="platform" style="bottom: 250px; left: 2200px; width: 200px; height: 40px;"></div>
+        <div class="coin" style="bottom: 300px; left: 2250px;">💰</div>
+        <div class="coin" style="bottom: 300px; left: 2320px;">💰</div>
+
+        <div class="enemy" data-x="2700" style="left: 2700px;">👾</div>
+        <div class="pipe" style="left: 3000px; height: 60px;"></div>
+        <div class="platform" style="bottom: 350px; left: 3200px; width: 150px; height: 40px;"></div>
+        
+        <div class="flag" style="left: 4500px;">🚩</div>
+        </div>
 
     <div id="controls">
-        <div style="display:flex; gap:10px;">
-            <div class="btn" id="left">⬅️</div>
-            <div class="btn" id="right">➡️</div>
+        <div style="display: flex; gap: 20px;">
+            <div class="ctrl-btn" id="btn-left">⬅️</div>
+            <div class="ctrl-btn" id="btn-right">➡️</div>
         </div>
-        <div class="btn" id="jump" style="background:cyan; border-radius:50%;">🚀</div>
+        <div class="ctrl-btn" id="btn-jump">🚀</div>
     </div>
 </div>
 
 <script>
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playSfx(f, t, d) {
-        const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-        o.type = t; o.frequency.value = f; g.gain.value = 0.1;
-        o.connect(g); g.connect(audioCtx.destination);
-        o.start(); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d); o.stop(audioCtx.currentTime + d);
+    // --- AUDIO SYSTEM ---
+    const audio = new (window.AudioContext || window.webkitAudioContext)();
+    function sound(freq, type, dur) {
+        const o = audio.createOscillator(); const g = audio.createGain();
+        o.type = type; o.frequency.value = freq; g.gain.value = 0.1;
+        o.connect(g); g.connect(audio.destination);
+        o.start(); g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + dur); o.stop(audio.currentTime + dur);
     }
 
-    const player = document.getElementById('player');
-    const world = document.getElementById('world');
-    const platforms = []; // Kita simpan data koordinat di sini
+    // --- VARIABLES ---
+    const world = document.getElementById('world'), player = document.getElementById('player');
+    const coinSpan = document.getElementById('coins'), scoreSpan = document.getElementById('score');
+    
+    let pX = 100, pY = 0, vY = 0, onG = false, active = false;
+    let sc = 0, cn = 0, moveL = false, moveR = false;
+    const gravity = 0.8, jumpForce = 17, speed = 7;
+    let enemies = [];
 
-    let pX = 100, pY = 0, vY = 0, isJumping = false;
-    let moveL = false, moveR = false;
-    let score = 0, coins = 0;
-    const gravity = 0.8, jumpPower = 16, speed = 6;
+    // --- INITIALIZATION ---
+    document.getElementById('hi-score').innerText = localStorage.getItem('yongHi') || 0;
 
-    function startGame() {
-        audioCtx.resume();
+    function initGame() {
+        audio.resume();
         document.getElementById('menu').style.display = 'none';
-        document.getElementById('viewport').style.display = 'block';
+        document.getElementById('game-container').style.display = 'block';
         
-        // Simpan semua koordinat objek ke array agar deteksi lancar
-        document.querySelectorAll('.pipe, .block').forEach(el => {
-            platforms.push({
-                x: parseInt(el.getAttribute('data-x')),
-                y: parseInt(el.getAttribute('data-y')),
-                w: parseInt(el.getAttribute('data-w') || 60),
-                el: el
-            });
+        document.querySelectorAll('.enemy').forEach(el => {
+            enemies.push({ el: el, x: parseInt(el.getAttribute('data-x')), dir: -1, dead: false });
         });
-        update();
+        
+        active = true;
+        requestAnimationFrame(gameLoop);
     }
 
-    // Input
-    const listen = (id, s, e) => {
+    // --- CONTROLS ---
+    const bind = (id, s, e) => {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (ev) => { ev.preventDefault(); s(); });
         el.addEventListener('touchend', (ev) => { ev.preventDefault(); e(); });
     };
-    listen('left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
-    listen('right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
-    listen('jump', () => { if(!isJumping) { vY = jumpPower; isJumping = true; playSfx(400, 'square', 0.2); } }, () => {});
 
-    function update() {
+    bind('btn-left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
+    bind('btn-right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
+    bind('btn-jump', () => { if(onG) { vY = jumpForce; onG = false; sound(400, 'square', 0.15); } }, () => {});
+
+    // --- MAIN LOOP ---
+    function gameLoop() {
+        if(!active) return;
+
+        // Physics
         vY -= gravity;
         pY += vY;
 
-        let onObject = false;
+        let pRect = player.getBoundingClientRect();
+        let currentGround = 0;
+        let isLanding = false;
 
-        // DETEKSI PIJAKAN (Matematika Murni, bukan getBoundingClientRect)
-        for (let plat of platforms) {
-            // Cek apakah player di atas platform secara horizontal
-            if (pX + 35 > plat.x && pX < plat.x + plat.w) {
-                // Cek apakah player mendarat (vY <= 0) dan posisi kaki pas di atas platform
-                if (vY <= 0 && pY >= plat.y && pY <= plat.y + 15) {
-                    pY = plat.y; // Kunci posisi kaki tepat di permukaan
-                    vY = 0;
-                    isJumping = false;
-                    onObject = true;
-                    break;
+        // TILE COLLISION LOGIC
+        document.querySelectorAll('.platform, .pipe').forEach(obj => {
+            let oR = obj.getBoundingClientRect();
+            // Cek horizontal
+            if (pRect.right > oR.left + 5 && pRect.left < oR.right - 5) {
+                // Cek vertikal (Mendarat)
+                if (vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 30) {
+                    currentGround = window.innerHeight - oR.top - 100 - 40; 
+                    isLanding = true;
                 }
             }
+        });
+
+        if(pY <= currentGround) {
+            pY = currentGround;
+            vY = 0;
+            onG = true;
+        } else {
+            onG = false;
         }
 
-        // Cek Tanah Dasar
-        if (!onObject && pY <= 0) {
-            pY = 0; vY = 0; isJumping = false;
-        }
+        // Movement
+        if(moveL && pX > 0) pX -= speed;
+        if(moveR) pX += speed;
 
-        if (moveL && pX > 0) pX -= speed;
-        if (moveR) pX += speed;
-
-        // Render Posisi
-        player.style.left = pX + 'px';
-        player.style.bottom = (100 + pY) + 'px'; // 100 adalah tinggi tanah
-
-        // Kamera Follow
-        let camX = Math.max(0, pX - 150);
+        // Camera & Render (Round for smooth visuals)
+        player.style.bottom = Math.floor(100 + pY) + "px";
+        player.style.left = Math.floor(pX) + "px";
+        let camX = Math.floor(Math.max(0, pX - 160));
         world.style.transform = `translateX(-${camX}px)`;
 
-        requestAnimationFrame(update);
+        // Enemy Logic
+        enemies.forEach(en => {
+            if(en.dead) return;
+            en.x += (en.dir * 2);
+            en.el.style.left = en.x + "px";
+            
+            let eR = en.el.getBoundingClientRect();
+            if(pRect.right > eR.left+10 && pRect.left < eR.right-10 && pRect.bottom > eR.top) {
+                if(vY < 0) { // Injak
+                    en.dead = true; en.el.innerText = '💥';
+                    sound(200, 'sawtooth', 0.1);
+                    setTimeout(() => en.el.remove(), 200);
+                    vY = 10; sc += 100; scoreSpan.innerText = sc;
+                } else { gameOver(); }
+            }
+            // Simple bounce
+            if(Math.random() < 0.01) en.dir *= -1;
+        });
+
+        // Coins
+        document.querySelectorAll('.coin').forEach(c => {
+            let cR = c.getBoundingClientRect();
+            if(pRect.right > cR.left && pRect.left < cR.right && pRect.bottom > cR.top && pRect.top < cR.bottom) {
+                c.remove(); cn++; sc += 50;
+                sound(800, 'sine', 0.1); sound(1200, 'sine', 0.1);
+                coinSpan.innerText = cn; scoreSpan.innerText = sc;
+            }
+        });
+
+        // Finish
+        if(pX > 4500) { active = false; alert("MISSION COMPLETE!"); location.reload(); }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+        active = false;
+        sound(100, 'square', 0.5);
+        const hi = localStorage.getItem('yongHi') || 0;
+        if(sc > hi) localStorage.setItem('yongHi', sc);
+        alert("GAME OVER\nSCORE: " + sc);
+        location.reload();
     }
 
     document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
