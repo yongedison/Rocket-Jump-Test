@@ -109,18 +109,39 @@
     const jumpPower = 15;
     const speed = 6;
 
+    // Logika Status Gerak
     let moveLeft = false;
     let moveRight = false;
 
-    const bindBtn = (id, start, end) => {
-        const el = document.getElementById(id);
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); start(); });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); end(); });
-    };
+    // FUNGSI INPUT BARU (Lebih Responsif)
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const btnJump = document.getElementById('btn-jump');
 
-    bindBtn('btn-left', () => { moveLeft = true; player.style.transform = 'scaleX(-1)'; });
-    bindBtn('btn-right', () => { moveRight = true; player.style.transform = 'scaleX(1)'; });
-    bindBtn('btn-jump', () => { if(!isJumping) { velocityY = jumpPower; isJumping = true; } }, () => {});
+    // KIRI
+    btnLeft.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        moveLeft = true; 
+        player.style.transform = 'scaleX(-1)'; 
+    });
+    btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
+
+    // KANAN
+    btnRight.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        moveRight = true; 
+        player.style.transform = 'scaleX(1)'; 
+    });
+    btnRight.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
+
+    // LONCAT
+    btnJump.addEventListener('touchstart', (e) => { 
+        e.preventDefault(); 
+        if(!isJumping) { 
+            velocityY = jumpPower; 
+            isJumping = true; 
+        } 
+    });
 
     function spawnWitch() {
         if (!gameActive) return;
@@ -145,21 +166,28 @@
                 location.reload();
             }
 
-            if (witchX < -50) { clearInterval(witchInterval); witch.remove(); score++; scoreElement.innerText = `Skor: ${score}`; }
+            if (witchX < -50) { 
+                clearInterval(witchInterval); 
+                witch.remove(); 
+                score++; 
+                scoreElement.innerText = `Skor: ${score}`; 
+            }
         }, 20);
         setTimeout(spawnWitch, Math.random() * 2000 + 2000);
     }
 
+    // LOOP UTAMA (Sangat Penting buat Gerakan Lancar)
     function update() {
         if (!gameActive) return;
 
+        // Gravitasi & Loncat
         velocityY -= gravity;
         posY += velocityY;
 
         let playerRect = player.getBoundingClientRect();
         let onPlatform = false;
 
-        // Cek Pijakan (Platform & Pipa)
+        // Deteksi Pijakan
         platforms.forEach(plat => {
             let platRect = plat.getBoundingClientRect();
             if (velocityY <= 0 && 
@@ -167,7 +195,7 @@
                 playerRect.bottom >= platRect.top - 10 &&
                 playerRect.right > platRect.left && 
                 playerRect.left < platRect.right) {
-                posY = window.innerHeight - platRect.top - 45; // 45 tinggi player
+                posY = window.innerHeight - platRect.top - 45; 
                 velocityY = 0;
                 isJumping = false;
                 onPlatform = true;
@@ -180,18 +208,31 @@
             velocityY = 0;
         }
 
-        if (moveLeft && posX > 0) posX -= speed;
-        if (moveRight && posX < window.innerWidth - 50) posX += speed;
+        // GERAKAN MAJU MUNDUR (Sekarang diproses setiap frame)
+        if (moveLeft && posX > 0) {
+            posX -= speed;
+        }
+        if (moveRight && posX < window.innerWidth - 50) {
+            posX += speed;
+        }
 
+        // Update Posisi Visual
         player.style.bottom = (220 + posY) + 'px';
         player.style.left = posX + 'px';
+
         requestAnimationFrame(update);
     }
 
+    // Start Game
     update();
     spawnWitch();
-    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+    // Mencegah iPhone melakukan zoom atau scroll saat main
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
 </script>
+
 
 </body>
 </html>
