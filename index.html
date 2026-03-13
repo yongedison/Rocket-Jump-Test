@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Yong vs Asti - Boss Phase</title>
+    <style>
+        :root { --yong: #00f2ff; --asti: #bf00ff; --fire: #ff3b30; }
+        body { margin: 0; background: #050505; overflow: hidden; font-family: 'Courier New', monospace; touch-action: none; }
+        canvas { display: block; }
+        
+        #ui-top {
+            position: fixed; top: 20px; width: 100%; display: flex;
+            justify-content: space-around; pointer-events: none; z-index: 10;
+        }
+        .hp-bar { width: 140px; height: 12px; background: #222; border: 1px solid #444; border-radius: 5px; margin-top: 5px; }
+        .hp-fill { height: 100%; transition: width 0.2s; }
+        #yong-hp { background: var(--yong); box-shadow: 0 0 10px var(--yong); width: 100%; }
+        #asti-hp { background: var(--asti); box-shadow: 0 0 10px var(--asti); width: 100%; }
+        .label { color: white; font-size: 10px; letter-spacing: 1px; text-shadow: 0 0 5px black; }
+
+        #controls { 
+            position: fixed; bottom: 30px; width: 100%; 
+            display: flex; justify-content: space-evenly; align-items: center; z-index: 10;
+        }
+        .btn { 
+            width: 70px; height: 70px; background: rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; 
+            color: white; font-weight: bold; font-size: 12px;
+        }
+        .attack-btn { background: rgba(0, 242, 255, 0.2); border-color: var(--yong); width: 85px; height: 85px; color: var(--yong); }
+        
+        /* Efek Shake Layar */
+        .shake { animation: shakeAnim 0.2s; }
+        @keyframes shakeAnim {
+            0% { transform: translate(1px, 1px); }
+            20% { transform: translate(-3px, 0px); }
+            40% { transform: translate(3px, 2px); }
+            60% { transform: translate(-3px, -2px); }
+            80% { transform: translate(2px, 1px); }
+            100% { transform: translate(0, 0); }
+        }
+    </style>
+</head>
+<body id="game-body">
+
+<div id="ui-top">
+    <div>
+        <div class="label">REAKTOR YONG</div>
+        <div class="hp-bar"><div id="yong-hp" class="hp-fill"></div></div>
+    </div>
+    <div>
+        <div class="label">MANA ASTI</div>
+        <div class="hp-bar"><div id="asti-hp" class="hp-fill"></div></div>
+    </div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="controls">
+    <div class="btn" id="leftBtn">◄</div>
+    <div class="btn" id="rightBtn">►</div>
+    <div class="btn" id="jumpBtn">UP</div>
+    <div class="btn attack-btn" id="attackBtn">SLASH</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const body = document.getElementById('game-body');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const game = { active: true, gravity: 0.7, floorY: canvas.height - 80 };
+
+    const yong = {
+        x: 100, y: 0, w: 35, h: 55, color: '#00f2ff',
+        dx: 0, dy: 0, hp: 100,
+        isJumping: false, isAttacking: false, atkFrame: 0
+    };
+
+    const asti = {
+        x: canvas.width - 150, y: 250, w: 40, h: 60, color: '#bf00ff',
+        hp: 100, hoverDir: 1, lastShot: 0, isTeleporting: false
+    };
+
+    const projectiles = [];
+
+    function screenShake() {
+        body.classList.add('shake');
+        setTimeout(() => body.classList.remove('shake'), 200);
+    }
+
+    function astiTeleport() {
+        asti.isTeleporting = true;
+        setTimeout(() => {
+            asti.x = Math.random() * (canvas.width - 200) + 100;
+            asti.y = Math.random() * 200 + 100;
+            asti.isTeleporting = false;
+        }, 100);
+    }
+
+    function drawEntity(e, color, isAsti = false) {
+        if(asti.isTeleporting && isAsti) return;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+        ctx.shadowBlur = 0;
+    }
+
+    function drawSlash() {
+        if (yong.isAttacking) {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "white";
+            // Efek ayunan melengkung sederhana
+            ctx.fillRect(yong.x + yong.w, yong.y - 10, 60, 80);
+            ctx.shadowBlur = 0;
+            
+            yong.atkFrame++;
+            
+            // Hit Logic
+            if(yong.x + yong.w + 60 > asti.x && yong.x < asti.x + asti.w &&
+               yong.y - 10 < asti.y + asti.h && yong.y + 70 > asti.y) {
+                if(yong.atkFrame === 1) {
+                    asti.hp -= 10;
+                    screenShake();
+                    astiTeleport(); // Teleport setelah kena pukul
+                    updateUI();
+                }
+            }
+
+            if (yong.atkFrame > 6) {
+                yong.isAttacking = false;
+                yong.atkFrame = 0;
+            }
+        }
+    }
+
+    function updateProjectiles() {
+        projectiles.forEach((p, index) => {
+            p.x -= 8;
+            ctx.fillStyle = "#ff00ff";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "magenta";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if(p.x < yong.x + yong.w && p.x > yong.x &&
+               p.y > yong.y && p.y < yong.y + yong.h) {
+                yong.hp -= 15;
+                projectiles.splice(index, 1);
+                screenShake();
+                updateUI();
+            }
+            if(p.x < 0) projectiles.splice(index, 1);
+        });
+    }
+
+    function updateUI() {
+        document.getElementById('yong-hp').style.width = Math.max(0, yong.hp) + "%";
+        document.getElementById('asti-hp').style.width = Math.max(0, asti.hp) + "%";
+        if(yong.hp <= 0) { alert("Yong Tumbang! Asti menguasai dunia."); reset(); }
+        if(asti.hp <= 0) { alert("Asti Kalah! Yong berhasil memecah sihir."); reset(); }
+    }
+
+    function reset() { location.reload(); }
+
+    function loop(time) {
+        ctx.fillStyle = "#0a0a0c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid Background Futuristik
+        ctx.strokeStyle = "#1a1a2e";
+        for(let i=0; i<canvas.width; i+=50) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        }
+
+        // Lantai
+        ctx.fillStyle = "#111";
+        ctx.fillRect(0, game.floorY, canvas.width, 100);
+        ctx.strokeStyle = var(--yong);
+        ctx.strokeRect(0, game.floorY, canvas.width, 1);
+
+        // Physics Yong
+        yong.dy += game.gravity;
+        yong.y += yong.dy;
+        yong.x += yong.dx;
+
+        if (yong.y + yong.h > game.floorY) {
+            yong.y = game.floorY - yong.h;
+            yong.dy = 0;
+            yong.isJumping = false;
+        }
+        
+        // Batas Layar Yong
+        if(yong.x < 0) yong.x = 0;
+        if(yong.x > canvas.width - yong.w) yong.x = canvas.width - yong.w;
+
+        // Asti Behavior
+        if(!asti.isTeleporting) {
+            asti.y += 2 * asti.hoverDir;
+            if(asti.y > 350 || asti.y < 80) asti.hoverDir *= -1;
+
+            if(time - asti.lastShot > 1500) {
+                projectiles.push({x: asti.x, y: asti.y + 30});
+                asti.lastShot = time;
+            }
+        }
+
+        drawEntity(yong, yong.color);
+        drawEntity(asti, asti.color, true);
+        drawSlash();
+        updateProjectiles();
+
+        requestAnimationFrame(loop);
+    }
+
+    const setupBtn = (id, start, end) => {
+        const btn = document.getElementById(id);
+        btn.ontouchstart = (e) => { e.preventDefault(); start(); };
+        btn.ontouchend = (e) => { e.preventDefault(); end(); };
+    };
+
+    setupBtn('leftBtn', () => yong.dx = -6, () => yong.dx = 0);
+    setupBtn('rightBtn', () => yong.dx = 6, () => yong.dx = 0);
+    setupBtn('jumpBtn', () => { if(!yong.isJumping){ yong.dy = -15; yong.isJumping = true; } }, () => {});
+    setupBtn('attackBtn', () => yong.isAttacking = true, () => {});
+
+    requestAnimationFrame(loop);
+</script>
+</body>
+</html>
