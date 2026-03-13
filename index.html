@@ -75,8 +75,14 @@
     const player = document.getElementById('player');
     const scoreElement = document.getElementById('score');
     let posX = 50;
-    let posY = 50; // Jarak dari bawah (ground)
-    let velocityY = 0;
+    let posY = 170; // Sesuaikan dengan posisi bottom player di CSS
+// ... di dalam function update() ...
+if (posY <= 170) {
+    posY = 170;
+    isJumping = false;
+    velocityY = 0;
+}
+
     let isJumping = false;
     let score = 0;
     let gameActive = true;
