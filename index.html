@@ -3,150 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Yong's Adventure</title>
+    <title>Super Yong World</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { 
-            margin: 0; padding: 0; overflow: hidden; 
-            background: #5c94fc; font-family: -apple-system, sans-serif; 
-            touch-action: none; width: 100vw; height: 100vh;
+        body { margin: 0; padding: 0; overflow: hidden; background: #5c94fc; font-family: 'Arial', sans-serif; touch-action: none; }
+        
+        /* Menu Utama */
+        #menu {
+            position: fixed; inset: 0; background: #5c94fc; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
         }
-        
-        /* Dunia yang bisa digeser (Viewport) */
-        #game-viewport { position: relative; width: 100%; height: 100%; overflow: hidden; }
-        #world { position: absolute; top: 0; left: 0; height: 100%; width: 5000px; transition: transform 0.1s linear; }
+        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; font-weight: bold; }
 
-        #ground { position: absolute; bottom: 0; width: 5000px; height: 180px; background: #885010; border-top: 5px solid #4a2a05; }
+        /* Game Elements */
+        #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: none; }
+        #world { position: absolute; top: 0; left: 0; height: 100%; width: 6000px; }
+        #ground { position: absolute; bottom: 0; width: 6000px; height: 180px; background: #885010; border-top: 6px solid #4a2a05; }
         
-        /* Karakter & Objek */
         #player { position: absolute; width: 45px; height: 45px; font-size: 40px; z-index: 100; bottom: 180px; left: 100px; }
-        .platform { position: absolute; background: #ff9441; border: 3px solid #000; z-index: 10; }
-        .pipe { position: absolute; background: #2ecc71; width: 60px; height: 80px; bottom: 180px; border: 3px solid #000; z-index: 10; }
-        .enemy { position: absolute; bottom: 180px; font-size: 35px; width: 40px; height: 40px; z-index: 10; }
-        .finish-line { position: absolute; bottom: 180px; font-size: 60px; z-index: 5; }
+        .platform { position: absolute; background: #ff9441; border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010; z-index: 10; }
+        .pipe { position: absolute; background: #2ecc71; width: 70px; height: 100px; bottom: 180px; border: 3px solid #000; z-index: 9; border-radius: 5px 5px 0 0; }
+        .coin { position: absolute; font-size: 25px; z-index: 8; animation: bounce 0.5s infinite alternate; }
+        .enemy { position: absolute; bottom: 180px; font-size: 35px; z-index: 10; }
+        .finish { position: absolute; bottom: 180px; font-size: 60px; }
 
-        /* UI */
-        #ui { position: fixed; top: 50px; left: 20px; color: white; font-weight: bold; font-size: 1.5rem; text-shadow: 2px 2px #000; z-index: 200; }
-
-        /* Kontrol */
-        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; z-index: 200; }
-        .btn { background: rgba(255,255,255,0.4); width: 80px; height: 80px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; border: 3px solid white; }
-        #btn-jump { background: rgba(0, 212, 255, 0.5); width: 90px; height: 90px; }
+        /* UI & Kontrol */
+        #ui { position: fixed; top: 40px; left: 20px; color: white; font-size: 1.2rem; font-weight: bold; z-index: 500; text-shadow: 2px 2px #000; }
+        #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; z-index: 500; }
+        .btn { background: rgba(255,255,255,0.4); width: 75px; height: 75px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 3px solid white; }
+        
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
     </style>
 </head>
 <body>
 
-<div id="game-viewport">
-    <div id="ui">Score: <span id="score">0</span> | Stage 1-1</div>
-    
+<div id="menu">
+    <h1 style="font-size: 3rem; text-shadow: 4px 4px #000;">SUPER YONG</h1>
+    <p>High Score: <span id="hi-score">0</span></p>
+    <button class="btn-start" onclick="startGame()">START GAME</button>
+</div>
+
+<div id="viewport">
+    <div id="ui">🪙 <span id="coins">0</span> | Score: <span id="score">0</span></div>
     <div id="world">
         <div id="ground"></div>
         <div id="player">🤴</div>
         
-        <div class="platform" style="bottom: 320px; left: 400px; width: 150px; height: 35px;"></div>
-        <div class="pipe" style="left: 700px;"></div>
-        <div class="platform" style="bottom: 400px; left: 900px; width: 100px; height: 35px;"></div>
-        <div class="enemy" id="enemy1" style="left: 600px;">👾</div>
-        <div class="enemy" id="enemy2" style="left: 1200px;">👾</div>
+        <div class="pipe" style="left: 500px;"></div>
+        <div class="platform" style="bottom: 350px; left: 700px; width: 120px; height: 35px;"></div>
+        <div class="coin" style="bottom: 400px; left: 745px;">💰</div>
         
-        <div class="finish-line" style="left: 2000px;">🚩</div>
-    </div>
-</div>
+        <div class="platform" style="bottom: 450px; left: 950px; width: 150px; height: 35px;"></div>
+        <div class="enemy" id="en1" style="left: 1100px;">👾</div>
+        
+        <div class="pipe" style="left: 1400px; height: 140px;"></div>
+        <div class="platform" style="bottom: 350px; left: 1600px; width: 200px; height: 35px;"></div>
+        <div class="coin" style="bottom: 400px; left: 1650px;">💰</div>
+        <div class="coin" style="bottom: 400px; left: 1700px;">💰</div>
 
-<div id="controls">
-    <div style="display: flex; gap: 15px;">
-        <div class="btn" id="btn-left">⬅️</div>
-        <div class="btn" id="btn-right">➡️</div>
+        <div class="enemy" id="en2" style="left: 2200px;">👾</div>
+        <div class="platform" style="bottom: 320px; left: 2500px; width: 300px; height: 35px;"></div>
+        <div class="finish" style="left: 5500px;">🚩</div>
     </div>
-    <div class="btn" id="btn-jump">🚀</div>
+
+    <div id="controls">
+        <div style="display: flex; gap: 15px;">
+            <div class="btn" id="btn-left">⬅️</div>
+            <div class="btn" id="btn-right">➡️</div>
+        </div>
+        <div class="btn" id="btn-jump" style="background: rgba(0,212,255,0.5); width: 85px; height: 85px;">🚀</div>
+    </div>
 </div>
 
 <script>
     const world = document.getElementById('world');
     const player = document.getElementById('player');
     const scoreText = document.getElementById('score');
-    
+    const coinText = document.getElementById('coins');
+    const hiScoreText = document.getElementById('hi-score');
+
     let pX = 100, pY = 0, vY = 0, isJump = false;
-    let score = 0, camX = 0, gameActive = true;
+    let score = 0, coins = 0, gameActive = false;
     let moveL = false, moveR = false;
+    const gravity = 0.8, jumpPower = 16, speed = 7;
 
-    const gravity = 0.8, jumpPower = 16, speed = 6;
+    // Load High Score
+    let savedHi = localStorage.getItem('yongHighScore') || 0;
+    hiScoreText.innerText = savedHi;
 
-    // Input Handlers
+    function startGame() {
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('viewport').style.display = 'block';
+        gameActive = true;
+        update();
+    }
+
+    // Controls
     const setup = (id, s, e) => {
         const el = document.getElementById(id);
         el.addEventListener('touchstart', (ev) => { ev.preventDefault(); s(); });
         el.addEventListener('touchend', (ev) => { ev.preventDefault(); e(); });
     };
-
     setup('btn-left', () => { moveL = true; player.style.transform = 'scaleX(-1)'; }, () => moveL = false);
     setup('btn-right', () => { moveR = true; player.style.transform = 'scaleX(1)'; }, () => moveR = false);
     setup('btn-jump', () => { if(!isJump) { vY = jumpPower; isJump = true; } }, () => {});
 
-    // Enemy Logic
-    let enemies = [
-        { id: 'enemy1', x: 600, dir: -1, active: true },
-        { id: 'enemy2', x: 1200, dir: -1, active: true }
-    ];
-
     function update() {
         if(!gameActive) return;
 
-        // Physics
         vY -= gravity;
         pY += vY;
 
-        if(pY <= 0) { pY = 0; vY = 0; isJump = false; }
+        let pRect = player.getBoundingClientRect();
+        let onPlat = false;
+
+        // Collision Platforms & Pipes
+        document.querySelectorAll('.platform, .pipe').forEach(obj => {
+            let oR = obj.getBoundingClientRect();
+            if(vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 25 && pRect.right > oR.left + 5 && pRect.left < oR.right - 5) {
+                pY = window.innerHeight - oR.top - 45;
+                vY = 0; isJump = false; onPlat = true;
+            }
+        });
+
+        if(!onPlat && pY <= 0) { pY = 0; vY = 0; isJump = false; }
 
         if(moveL && pX > 0) pX -= speed;
         if(moveR) pX += speed;
 
-        // Camera Follow (Pusatkan pangeran di layar)
-        camX = Math.max(0, pX - 150);
+        // Camera
+        let camX = Math.max(0, pX - 150);
         world.style.transform = `translateX(-${camX}px)`;
-
-        // Update Visual
         player.style.left = pX + 'px';
         player.style.bottom = (180 + pY) + 'px';
 
-        // Check Collision with Enemies
-        enemies.forEach(en => {
-            if(!en.active) return;
-            const el = document.getElementById(en.id);
-            en.x += (en.dir * 2);
-            el.style.left = en.x + 'px';
-
-            // Tabrakan
-            let pR = player.getBoundingClientRect();
-            let eR = el.getBoundingClientRect();
-
-            if (pR.right > eR.left + 10 && pR.left < eR.right - 10 && pR.bottom > eR.top) {
-                if (vY < 0) { // Injak kepala
-                    en.active = false;
-                    el.style.display = 'none';
-                    vY = 10; // Mental dikit
-                    score += 100;
-                    scoreText.innerText = score;
-                } else { // Nabrak samping
-                    gameActive = false;
-                    alert("Game Over! Kena musuh.");
-                    location.reload();
-                }
+        // Coins
+        document.querySelectorAll('.coin').forEach(c => {
+            let cR = c.getBoundingClientRect();
+            if(pRect.right > cR.left && pRect.left < cR.right && pRect.bottom > cR.top && pRect.top < cR.bottom) {
+                c.remove(); coins++; score += 50;
+                coinText.innerText = coins; scoreText.innerText = score;
             }
         });
 
-        // Check Finish
-        if(pX > 2000) {
-            gameActive = false;
-            alert("STAGE CLEAR! Kamu hebat!");
-            location.reload();
-        }
+        // Enemies (Basic AI)
+        document.querySelectorAll('.enemy').forEach(en => {
+            let eR = en.getBoundingClientRect();
+            if(pRect.right > eR.left + 10 && pRect.left < eR.right - 10 && pRect.bottom > eR.top) {
+                if(vY < 0) { en.remove(); vY = 10; score += 100; scoreText.innerText = score; }
+                else { gameOver(); }
+            }
+        });
 
+        if(pX > 5500) { gameActive = false; alert("YOU WIN!"); location.reload(); }
         requestAnimationFrame(update);
     }
 
-    update();
+    function gameOver() {
+        gameActive = false;
+        if(score > savedHi) localStorage.setItem('yongHighScore', score);
+        alert("Game Over! Score: " + score);
+        location.reload();
+    }
+
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 </script>
 </body>
 </html>
