@@ -9,39 +9,37 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; overflow: hidden; background: #5c94fc; font-family: 'Arial', sans-serif; touch-action: none; }
         
-        /* Menu Utama */
-        #menu {
-            position: fixed; inset: 0; background: #5c94fc; z-index: 1000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;
-        }
-        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; font-weight: bold; }
+        /* Menu */
+        #menu { position: fixed; inset: 0; background: #5c94fc; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .btn-start { padding: 15px 40px; font-size: 1.5rem; background: #ff9441; border: 4px solid white; color: white; border-radius: 10px; font-weight: bold; box-shadow: 0 5px 0 #885010; }
 
-        /* Game Elements */
+        /* Game Area */
         #viewport { position: relative; width: 100vw; height: 100vh; overflow: hidden; display: none; }
-        #world { position: absolute; top: 0; left: 0; height: 100%; width: 6000px; }
-        #ground { position: absolute; bottom: 0; width: 6000px; height: 180px; background: #885010; border-top: 6px solid #4a2a05; }
+        #world { position: absolute; top: 0; left: 0; height: 100%; width: 10000px; }
+        #ground { position: absolute; bottom: 0; width: 10000px; height: 100px; background: #885010; border-top: 6px solid #4a2a05; }
         
-        #player { position: absolute; width: 45px; height: 45px; font-size: 40px; z-index: 100; bottom: 180px; left: 100px; }
-        .platform { position: absolute; background: #ff9441; border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010; z-index: 10; }
-        .pipe { position: absolute; background: #2ecc71; width: 70px; height: 100px; bottom: 180px; border: 3px solid #000; z-index: 9; border-radius: 5px 5px 0 0; }
-        .coin { position: absolute; font-size: 25px; z-index: 8; animation: bounce 0.5s infinite alternate; }
-        .enemy { position: absolute; bottom: 180px; font-size: 35px; z-index: 10; }
-        .finish { position: absolute; bottom: 180px; font-size: 60px; }
+        /* Objek */
+        #player { position: absolute; width: 40px; height: 40px; font-size: 35px; z-index: 100; bottom: 100px; left: 100px; display: flex; align-items: center; justify-content: center; }
+        .block { position: absolute; background: #ff9441; border: 3px solid #000; box-shadow: inset -4px -4px 0 #885010; z-index: 10; }
+        .pipe { position: absolute; background: #2ecc71; width: 70px; border: 3px solid #000; z-index: 9; border-radius: 5px 5px 0 0; bottom: 100px; }
+        .pipe::after { content: ''; position: absolute; top: 0; left: -5px; width: 74px; height: 20px; background: #2ecc71; border: 3px solid #000; border-radius: 3px; }
+        .coin { position: absolute; font-size: 25px; z-index: 8; text-align: center; }
+        .enemy { position: absolute; bottom: 100px; font-size: 30px; width: 40px; height: 40px; z-index: 10; display: flex; align-items: center; justify-content: center; }
+        .flag { position: absolute; bottom: 100px; font-size: 60px; z-index: 5; }
 
-        /* UI & Kontrol */
+        /* UI */
         #ui { position: fixed; top: 40px; left: 20px; color: white; font-size: 1.2rem; font-weight: bold; z-index: 500; text-shadow: 2px 2px #000; }
         #controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; z-index: 500; }
-        .btn { background: rgba(255,255,255,0.4); width: 75px; height: 75px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; border: 3px solid white; }
-        
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        .btn { background: rgba(255,255,255,0.4); width: 70px; height: 70px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; border: 3px solid white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        #btn-jump { background: rgba(0,212,255,0.5); width: 85px; height: 85px; border-radius: 50%; }
     </style>
 </head>
 <body>
 
 <div id="menu">
-    <h1 style="font-size: 3rem; text-shadow: 4px 4px #000;">SUPER YONG</h1>
-    <p>High Score: <span id="hi-score">0</span></p>
-    <button class="btn-start" onclick="startGame()">START GAME</button>
+    <h1 style="font-size: 2.5rem; text-align: center; margin-bottom: 10px;">SUPER YONG<br>WORLD</h1>
+    <p>Record: <span id="hi-score">0</span></p>
+    <button class="btn-start" onclick="startGame()">MASUK LEVEL 1-1</button>
 </div>
 
 <div id="viewport">
@@ -50,21 +48,27 @@
         <div id="ground"></div>
         <div id="player">🤴</div>
         
-        <div class="pipe" style="left: 500px;"></div>
-        <div class="platform" style="bottom: 350px; left: 700px; width: 120px; height: 35px;"></div>
-        <div class="coin" style="bottom: 400px; left: 745px;">💰</div>
+        <div class="pipe" style="left: 450px; height: 60px;"></div>
+        <div class="block" style="bottom: 250px; left: 600px; width: 40px; height: 40px;"></div>
+        <div class="coin" style="bottom: 300px; left: 605px;">💰</div>
+        <div class="block" style="bottom: 250px; left: 640px; width: 40px; height: 40px;"></div>
         
-        <div class="platform" style="bottom: 450px; left: 950px; width: 150px; height: 35px;"></div>
-        <div class="enemy" id="en1" style="left: 1100px;">👾</div>
+        <div class="enemy" data-id="1" style="left: 900px;">👾</div>
+        <div class="pipe" style="left: 1100px; height: 100px;"></div>
         
-        <div class="pipe" style="left: 1400px; height: 140px;"></div>
-        <div class="platform" style="bottom: 350px; left: 1600px; width: 200px; height: 35px;"></div>
-        <div class="coin" style="bottom: 400px; left: 1650px;">💰</div>
-        <div class="coin" style="bottom: 400px; left: 1700px;">💰</div>
+        <div class="block" style="bottom: 220px; left: 1400px; width: 200px; height: 30px;"></div>
+        <div class="coin" style="bottom: 260px; left: 1450px;">💰</div>
+        <div class="coin" style="bottom: 260px; left: 1520px;">💰</div>
+        
+        <div class="enemy" data-id="2" style="left: 1800px;">👾</div>
+        <div class="enemy" data-id="3" style="left: 2100px;">👾</div>
+        
+        <div class="block" style="bottom: 250px; left: 2400px; width: 80px; height: 40px;"></div>
+        <div class="block" style="bottom: 350px; left: 2550px; width: 80px; height: 40px;"></div>
+        <div class="block" style="bottom: 450px; left: 2700px; width: 80px; height: 40px;"></div>
+        <div class="coin" style="bottom: 500px; left: 2725px;">💰</div>
 
-        <div class="enemy" id="en2" style="left: 2200px;">👾</div>
-        <div class="platform" style="bottom: 320px; left: 2500px; width: 300px; height: 35px;"></div>
-        <div class="finish" style="left: 5500px;">🚩</div>
+        <div class="flag" style="left: 4000px;">🚩</div>
     </div>
 
     <div id="controls">
@@ -72,7 +76,7 @@
             <div class="btn" id="btn-left">⬅️</div>
             <div class="btn" id="btn-right">➡️</div>
         </div>
-        <div class="btn" id="btn-jump" style="background: rgba(0,212,255,0.5); width: 85px; height: 85px;">🚀</div>
+        <div class="btn" id="btn-jump">🚀</div>
     </div>
 </div>
 
@@ -86,17 +90,26 @@
     let pX = 100, pY = 0, vY = 0, isJump = false;
     let score = 0, coins = 0, gameActive = false;
     let moveL = false, moveR = false;
-    const gravity = 0.8, jumpPower = 16, speed = 7;
+    
+    const gravity = 0.8, jumpPower = 17, speed = 6;
+    let enemyList = [];
 
     // Load High Score
-    let savedHi = localStorage.getItem('yongHighScore') || 0;
+    let savedHi = localStorage.getItem('yongHi') || 0;
     hiScoreText.innerText = savedHi;
 
     function startGame() {
         document.getElementById('menu').style.display = 'none';
         document.getElementById('viewport').style.display = 'block';
+        initEnemies();
         gameActive = true;
         update();
+    }
+
+    function initEnemies() {
+        document.querySelectorAll('.enemy').forEach(el => {
+            enemyList.push({ el: el, x: parseInt(el.style.left), dir: -1, dead: false });
+        });
     }
 
     // Controls
@@ -112,33 +125,62 @@
     function update() {
         if(!gameActive) return;
 
+        // Gravitasi
         vY -= gravity;
         pY += vY;
 
         let pRect = player.getBoundingClientRect();
-        let onPlat = false;
+        let onObj = false;
 
-        // Collision Platforms & Pipes
-        document.querySelectorAll('.platform, .pipe').forEach(obj => {
+        // FIXED COLLISION (Anti-Mantul)
+        document.querySelectorAll('.block, .pipe').forEach(obj => {
             let oR = obj.getBoundingClientRect();
-            if(vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 25 && pRect.right > oR.left + 5 && pRect.left < oR.right - 5) {
-                pY = window.innerHeight - oR.top - 45;
-                vY = 0; isJump = false; onPlat = true;
+            // Cek jika mendarat tepat di atas
+            if (vY <= 0 && pRect.bottom >= oR.top && pRect.bottom <= oR.top + 20 &&
+                pRect.right > oR.left + 5 && pRect.left < oR.right - 5) {
+                pY = window.innerHeight - oR.top - 40; // 40 = tinggi player
+                vY = 0;
+                isJump = false;
+                onObj = true;
             }
         });
 
-        if(!onPlat && pY <= 0) { pY = 0; vY = 0; isJump = false; }
+        // Cek Tanah
+        if(!onObj && pY <= 0) { pY = 0; vY = 0; isJump = false; }
 
+        // Gerak Player
         if(moveL && pX > 0) pX -= speed;
         if(moveR) pX += speed;
 
-        // Camera
+        // Camera Follow
         let camX = Math.max(0, pX - 150);
         world.style.transform = `translateX(-${camX}px)`;
         player.style.left = pX + 'px';
-        player.style.bottom = (180 + pY) + 'px';
+        player.style.bottom = (100 + pY) + 'px';
 
-        // Coins
+        // Update Musuh (Jalan Otomatis)
+        enemyList.forEach(en => {
+            if(en.dead) return;
+            en.x += (en.dir * 2);
+            en.el.style.left = en.x + 'px';
+            
+            // Balik arah sederhana (tiap rute tertentu)
+            if(Math.random() < 0.01) en.dir *= -1;
+
+            let eR = en.el.getBoundingClientRect();
+            if(pRect.right > eR.left + 5 && pRect.left < eR.right - 5 && pRect.bottom > eR.top) {
+                if(vY < 0) { // Injak Musuh
+                    en.dead = true;
+                    en.el.innerText = '💥';
+                    setTimeout(() => en.el.remove(), 200);
+                    vY = 12; // Mental ke atas
+                    score += 100;
+                    scoreText.innerText = score;
+                } else { gameOver(); } // Nabrak samping
+            }
+        });
+
+        // Ambil Koin
         document.querySelectorAll('.coin').forEach(c => {
             let cR = c.getBoundingClientRect();
             if(pRect.right > cR.left && pRect.left < cR.right && pRect.bottom > cR.top && pRect.top < cR.bottom) {
@@ -147,23 +189,16 @@
             }
         });
 
-        // Enemies (Basic AI)
-        document.querySelectorAll('.enemy').forEach(en => {
-            let eR = en.getBoundingClientRect();
-            if(pRect.right > eR.left + 10 && pRect.left < eR.right - 10 && pRect.bottom > eR.top) {
-                if(vY < 0) { en.remove(); vY = 10; score += 100; scoreText.innerText = score; }
-                else { gameOver(); }
-            }
-        });
+        // Finish
+        if(pX > 4000) { gameActive = false; alert("LEVEL CLEAR! Skor: " + score); location.reload(); }
 
-        if(pX > 5500) { gameActive = false; alert("YOU WIN!"); location.reload(); }
         requestAnimationFrame(update);
     }
 
     function gameOver() {
         gameActive = false;
-        if(score > savedHi) localStorage.setItem('yongHighScore', score);
-        alert("Game Over! Score: " + score);
+        if(score > savedHi) localStorage.setItem('yongHi', score);
+        alert("GAME OVER!\nScore: " + score);
         location.reload();
     }
 
